@@ -2,6 +2,8 @@
 #include <gbdk/metasprites.h>
 #include <stdio.h>
 
+#include "../res/tiles/bkg_map.h"
+#include "../res/tiles/bkg_tiles.h"
 #include "../res/tiles/frogger.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)

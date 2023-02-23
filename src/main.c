@@ -9,18 +9,18 @@ UINT8 joy, last_joy;
 
 void move_frog(INT8 move_x, INT8 move_y) {
     while (move_x != 0) {
-        PLAYER.x += (move_x < 0 ? -2 : 2);
+        PLAYER.x += (move_x < 0 ? -1 : 1);
         move_metasprite(
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
-        move_x += (move_x < 0 ? 2 : -2);
+        move_x += (move_x < 0 ? 1 : -1);
         wait_vbl_done();
         refresh_OAM();
     }
     while (move_y != 0) {
-        PLAYER.y += (move_y < 0 ? -2 : 2);
+        PLAYER.y += (move_y < 0 ? -1 : 1);
         move_metasprite(
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
-        move_y += move_y < 0 ? 2 : -2;
+        move_y += move_y < 0 ? 1 : -1;
         wait_vbl_done();
         refresh_OAM();
     }
@@ -35,11 +35,11 @@ void main() {
     DISPLAY_ON;
 
     set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 7, BKG_TILES);
+    set_bkg_data(0, 8, BKG_TILES);
     set_bkg_tiles(0, 0, 20, 18, BKG_MAP);
 
-    PLAYER.x = 72;
-    PLAYER.y = 112;
+    PLAYER.x = 56;
+    PLAYER.y = 108;
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 
@@ -50,22 +50,22 @@ void main() {
         switch (joy) {
             case J_LEFT:
                 if (CHANGED_BUTTONS & J_LEFT) {
-                    move_frog(-16, 0);
+                    move_frog(-12, 0);
                 }
                 break;
             case J_RIGHT:
                 if (CHANGED_BUTTONS & J_RIGHT) {
-                    move_frog(16, 0);
+                    move_frog(12, 0);
                 }
                 break;
             case J_UP:
                 if (CHANGED_BUTTONS & J_UP) {
-                    move_frog(0, -16);
+                    move_frog(0, -8);
                 }
                 break;
             case J_DOWN:
                 if (CHANGED_BUTTONS & J_DOWN) {
-                    move_frog(0, 16);
+                    move_frog(0, 8);
                 }
                 break;
         }

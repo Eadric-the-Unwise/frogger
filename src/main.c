@@ -6,23 +6,18 @@
 
 GameCharacter PLAYER;
 UINT8 joy, last_joy;
+UBYTE is_moving;
+INT8 move_x, move_y;
 
-void move_frog(INT8 move_x, INT8 move_y) {
-    while (move_x != 0) {
+void move_frog() {
+    if (move_x != 0) {
         PLAYER.x += (move_x < 0 ? -1 : 1);
         move_metasprite(
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
-        move_x += (move_x < 0 ? 1 : -1);
-        wait_vbl_done();
-        refresh_OAM();
-    }
-    while (move_y != 0) {
+    } else if (move_y != 0) {
         PLAYER.y += (move_y < 0 ? -1 : 1);
         move_metasprite(
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
-        move_y += move_y < 0 ? 1 : -1;
-        wait_vbl_done();
-        refresh_OAM();
     }
 }
 
@@ -40,6 +35,7 @@ void main() {
 
     PLAYER.x = 56;
     PLAYER.y = 108;
+    UINT8 scx_counter = 2;  // REMOVE THIS?
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 
@@ -47,35 +43,60 @@ void main() {
         last_joy = joy;
         joy = joypad();
 
-        switch (joy) {
-            case J_LEFT:
-                if (CHANGED_BUTTONS & J_LEFT) {
-                    move_frog(-12, 0);
-                }
-                break;
-            case J_RIGHT:
-                if (CHANGED_BUTTONS & J_RIGHT) {
-                    move_frog(12, 0);
-                }
-                break;
-            case J_UP:
-                if (CHANGED_BUTTONS & J_UP) {
-                    move_frog(0, -8);
-                }
-                break;
-            case J_DOWN:
-                if (CHANGED_BUTTONS & J_DOWN) {
-                    move_frog(0, 8);
-                }
-                break;
+        if (!is_moving) {
+            switch (joy) {
+                case J_LEFT:
+                    if (CHANGED_BUTTONS & J_LEFT) {
+                        is_moving = TRUE;
+                        move_x = -12;
+                    }
+                    break;
+                case J_RIGHT:
+                    if (CHANGED_BUTTONS & J_RIGHT) {
+                        is_moving = TRUE;
+                        move_x = 12;
+                    }
+                    break;
+                case J_UP:
+                    if (CHANGED_BUTTONS & J_UP) {
+                        is_moving = TRUE;
+                        move_y = -8;
+                    }
+                    break;
+                case J_DOWN:
+                    if (CHANGED_BUTTONS & J_DOWN) {
+                        is_moving = TRUE;
+                        move_y = 8;
+                    }
+                    break;
+            }
         }
+        // --------------------MOVE FROG -------------------------------//
+
+        if (move_x != 0) {
+            move_frog();
+            move_x += move_x < 0 ? 1 : -1;
+        } else if (move_y != 0) {
+            move_frog();
+            move_y += move_y < 0 ? 1 : -1;
+        } else if (move_x == 0 || move_y == 0)
+            is_moving = FALSE;
+
+        // --------------------MOVE FROG -------------------------------//
+
+        if (scx_counter == 1) {
+            SCX_REG++;
+        }
+        if (scx_counter == 0)
+            scx_counter = 2;
+        scx_counter--;
+
         if (joy & J_SELECT) {
             PLAYER.x = 56;
             PLAYER.y = 108;
             move_metasprite(
                 frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
         }
-
         wait_vbl_done();
         refresh_OAM();
     }

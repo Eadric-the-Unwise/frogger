@@ -70,8 +70,8 @@ void main() {
                 break;
         }
         if (joy & J_SELECT) {
-            PLAYER.x = 72;
-            PLAYER.y = 112;
+            PLAYER.x = 56;
+            PLAYER.y = 108;
             move_metasprite(
                 frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
         }

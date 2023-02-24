@@ -8,6 +8,7 @@ GameCharacter PLAYER;
 UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
+UINT8 scroll1, scroll2, scroll3, scroll4;
 
 void move_frog() {
     if (move_x != 0) {
@@ -21,7 +22,50 @@ void move_frog() {
     }
 }
 
+void parallaxScroll() {
+    // if (LYC_REG == 0x00) {
+    //     move_bkg(scroll1, 0);
+    //     LYC_REG = 0x30;
+    // }
+    // if (LYC_REG == 0x30) {
+    //     move_bkg(scroll2, 0);
+    //     LYC_REG = 0x64;
+    // }
+    // if (LYC_REG == 0x64) {
+    //     move_bkg(scroll3, 0);
+    //     LYC_REG = 0x00;
+    // }
+    switch (LYC_REG) {
+        case 0x00:
+            move_bkg(scroll1, 0);
+            LYC_REG = 0x40;  // 56px
+            break;
+        case 0x40:
+            move_bkg(scroll2, 0);
+            LYC_REG = 0x48;
+            break;
+        case 0x48:
+            move_bkg(scroll3, 0);
+            LYC_REG = 0x6F;
+            break;
+        case 0x6F:
+            move_bkg(scroll4, 0);
+            LYC_REG = 0x00;
+            break;
+    }
+}
+
 void main() {
+    STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at
+    LYC_REG = 0x00;
+
+    scroll1 = scroll2 = scroll3 = scroll4 = 0;
+
+    CRITICAL {
+        add_LCD(parallaxScroll);
+    }
+    set_interrupts(VBL_IFLAG | LCD_IFLAG);
+
     DISABLE_VBL_TRANSFER;
     OBP1_REG = 0b10011100;
     SPRITES_8x16;  // MUST be 8x16 or 8x8. Can change in different scenes only
@@ -83,13 +127,15 @@ void main() {
             is_moving = FALSE;
 
         // --------------------MOVE FROG -------------------------------//
-
-        if (scx_counter == 1) {
-            SCX_REG++;
-        }
-        if (scx_counter == 0)
-            scx_counter = 2;
-        scx_counter--;
+        scroll1 += 1;
+        scroll2 -= 0;
+        scroll3 += 1;
+        // if (scx_counter == 1) {
+        //     SCX_REG++;
+        // }
+        // if (scx_counter == 0)
+        //     scx_counter = 2;
+        // scx_counter--;
 
         if (joy & J_SELECT) {
             PLAYER.x = 56;

@@ -30,8 +30,8 @@ void main() {
     DISPLAY_ON;
 
     set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 8, BKG_TILES);
-    set_bkg_tiles(0, 0, 20, 18, BKG_MAP);
+    set_bkg_data(0, 15, BKG_TILES);
+    set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
 
     PLAYER.x = 56;
     PLAYER.y = 108;

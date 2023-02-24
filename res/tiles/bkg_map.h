@@ -7,7 +7,7 @@
  Info:
    Section       : 
    Bank          : 0
-   Map size      : 20 x 18
+   Map size      : 32 x 32
    Tile set      : C:\c_code\projects\minigames\frogger\res\tiles\bkg_tiles.gbr
    Plane count   : 1 plane (8 bits)
    Plane order   : Tiles are continues
@@ -20,8 +20,8 @@
 #ifndef __bkg_map_h_INCLUDE
 #define __bkg_map_h_INCLUDE
 
-#define BKG_MAPWidth 20
-#define BKG_MAPHeight 18
+#define BKG_MAPWidth 32
+#define BKG_MAPHeight 32
 #define BKG_MAPBank 0
 
 extern const unsigned char BKG_MAP[];

@@ -29,11 +29,19 @@ void move_frog() {
 void parallaxScroll() {
     switch (LYC_REG) {
         case 0x00:
+            move_bkg(0, 0);
+            LYC_REG = 0x17;  // 56px
+            break;
+        case 0x17:
             move_bkg(scroll1, 0);
+            LYC_REG = 0x1F;  // 56px
+            break;
+        case 0x1F:
+            move_bkg(scroll2, 0);
             LYC_REG = 0x40;  // 56px
             break;
         case 0x40:
-            move_bkg(scroll2, 0);
+            move_bkg(0, 0);
             LYC_REG = 0x48;
             break;
         case 0x48:
@@ -136,9 +144,10 @@ void main() {
 
         if (scx_counter % 4 == 0) {  // += moves the 'camera' to the right, resulting in objects on screen moving left
             scroll1 -= 1;            // WATER
-            scroll5 += 1;            // CAR3
-            scroll6 -= 1;            // CAR4
-            scroll7 += 1;            // CAR5
+            scroll2 += 1;
+            scroll5 += 1;  // CAR3
+            scroll6 -= 1;  // CAR4
+            scroll7 += 1;  // CAR5
         }
         if (scx_counter % 3 == 0) {
             scroll3 += 1;  // BUS

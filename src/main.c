@@ -72,7 +72,7 @@ void parallaxScroll() {
 }
 
 void main() {
-    STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at
+    STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;
 
     CRITICAL {

@@ -4,14 +4,13 @@
 
 #include "scene.h"
 //------------GOALS-------------//
-// SCREEN SCROLL + LYC_REG EDIT
+// COLLISIONS
 // CGB PALLETES
 // SOUND
 GameCharacter PLAYER;
 UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
-UINT8 scroll1, scroll2, scroll3, scroll4, scroll5, scroll6, scroll7, scroll8, scroll9, scroll10;
 UINT8 scx_counter;
 
 void move_frog() {
@@ -28,55 +27,55 @@ void move_frog() {
 
 void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
     switch (LYC_REG) {
-        case 0x00:
+        case 0x00:  // first three stationary rows
             move_bkg(0, 0);
             LYC_REG = 0x17;
             break;
         case 0x17:  // LOG 1
-            move_bkg(scroll1, 0);
+            move_bkg(SCROLL_LOG1, 0);
             LYC_REG = 0x1F;
             break;
         case 0x1F:  // TURLES 1
-            move_bkg(scroll2, 0);
+            move_bkg(SCROLL_TURTLE1, 0);
             LYC_REG = 0x27;
             break;
         case 0x27:  // LOG 2 (fast)
-            move_bkg(scroll3, 0);
+            move_bkg(SCROLL_LOG2, 0);
             LYC_REG = 0x2F;
             break;
         case 0x2F:  // LOG 3
-            move_bkg(scroll4, 0);
+            move_bkg(SCROLL_LOG3, 0);
             LYC_REG = 0x37;
             break;
         case 0x37:  // TURTLES 2
-            move_bkg(scroll5, 0);
+            move_bkg(SCROLL_TURTLE2, 0);
             LYC_REG = 0x40;
             break;
         case 0x40:  // MIDDLE WALL
             move_bkg(0, 0);
             LYC_REG = 0x48;
             break;
-        case 0x48:  // BUS CAR 1
-            move_bkg(scroll6, 0);
+        case 0x48:  // CAR 1 BUS
+            move_bkg(SCROLL_CAR1, 0);
             LYC_REG = 0x50;
             break;
-        case 0x50:  // PINK CAR 2
-            move_bkg(scroll7, 0);
+        case 0x50:  // CAR 2 PINK
+            move_bkg(SCROLL_CAR2, 0);
             LYC_REG = 0x58;
             break;
         case 0x58:  // CAR 3
-            move_bkg(scroll8, 0);
+            move_bkg(SCROLL_CAR3, 0);
             LYC_REG = 0x60;
             break;
         case 0x60:  // CAR 4
-            move_bkg(scroll9, 0);
+            move_bkg(SCROLL_CAR4, 0);
             LYC_REG = 0x68;
             break;
         case 0x68:  // CAR 5
-            move_bkg(scroll10, 0);
+            move_bkg(SCROLL_CAR5, 0);
             LYC_REG = 0x6F;
             break;
-        case 0x6F:  // BOTTOM CURB AND BELOW
+        case 0x6F:  // BOTTOM CURB AND BELOW, STATIONARY
             move_bkg(0, 0);
             LYC_REG = 0x00;
             break;
@@ -155,23 +154,23 @@ void main() {
         // --------------------MOVE FROG -------------------------------//
 
         if (scx_counter % 6 == 0) {
-            scroll1 -= 1;  // LOG 1
-            scroll2 += 1;  // TURTLES
-            scroll5 += 1;
+            scroll[0] -= 1;  // LOG 1
+            scroll[1] += 1;  // TURTLES 1
+            scroll[4] += 1;  // TURTLES 2
         }
         if (scx_counter % 5 == 0) {
-            scroll4 -= 1;  // LOG 3
+            scroll[3] -= 1;  // LOG 3
         }
         if (scx_counter % 4 == 0) {  // += moves the 'camera' to the right, resulting in objects on screen moving left
-            scroll3 -= 1;            // LOG 2 (fast)
-            scroll8 += 1;            // CAR3
-            scroll9 -= 1;            // CAR4
-            scroll10 += 1;           // CAR5
+            scroll[2] -= 1;          // LOG 2
+            scroll[7] += 1;          // CAR3
+            scroll[8] -= 1;          // CAR4
+            scroll[9] += 1;          // CAR5
         }
         if (scx_counter % 3 == 0) {
-            scroll6 += 1;  // BUS
+            scroll[5] += 1;  // CAR 1 BUS
         }
-        scroll7 -= 1;  // PINK CAR
+        scroll[6] -= 1;  // CAR 2 PINK
 
         scx_counter++;
 

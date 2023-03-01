@@ -4,11 +4,11 @@
 
 #include "scene.h"
 //------------GOALS-------------//
-// COLLISIONS
+// LOG COLLISIONS
+// TURTLE COLLISIONS
 // CGB PALLETES
 // SOUND
 GameCharacter PLAYER;
-UINT8 car5_x;
 UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
@@ -17,7 +17,7 @@ UINT8 scx_counter;
 void respawn_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 40;
+    PLAYER.x = 56;
     PLAYER.y = 108;
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
@@ -93,16 +93,19 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
 }
 
 void collide_check(UINT8 frogx, UINT8 frogy) {
-    UINT16 left_x, right_x, indexY;  // tileindexTL
-    left_x = (frogx) / 8;
-    right_x = (frogx + 15) / 8;
-    indexY = (frogy + 8) / 8;
-    // tileindexTL = 20 * indexTLy + indexTLx;
+    UINT16 left_x, right_x, indexY;
 
-    UINT16 left_tile = get_bkg_tile_xy(left_x, indexY);  // 1024 total VRAM tiles 32x32
-    UINT16 right_tile = get_bkg_tile_xy(right_x, indexY);
+    indexY = (frogy + 8) / 8;                     // CALCULATE THE FROG'S Y ROW, USING HIS CENTER Y
+    UINT8 *scroll_ptr = scroll_remap[indexY];     // POINT TO THE CURRENT UINT8 SCROLL X VALUE
+    UINT8 offset = scroll_ptr ? *scroll_ptr : 0;  // IF POINTING TO NULL, THEN OFFSET IS 0. OTHERWISE, OFFSET EQUALS THE CURRENT SCROLL X VALUE
+    left_x = (frogx + offset) / 8;                // CALCULATE THE LEFT OF FROG X
+    right_x = (frogx + 15 + offset) / 8;          // CALCULATE THE RIGHT OF FROG X
 
-    if ((left_tile >= 0x0C && left_tile <= 0x0D) || (right_tile >= 0x0C && right_tile <= 0x0D)) {  // 12 and 13 car tile
+    // 1024 total VRAM tiles 32x32
+    UINT16 left_tile = get_bkg_tile_xy(left_x & 31, indexY);    // '& 31' WRAPPER PREVENTS VALUE FROM GOING HIGHER THAN 31. IT LOOPS BACK TO 0 (binary AND)
+    UINT16 right_tile = get_bkg_tile_xy(right_x & 31, indexY);  // '& 31' WRAPPER PREVENTS VALUE FROM GOING HIGHER THAN 31. IT LOOPS BACK TO 0 (binary AND)
+
+    if ((left_tile >= 0x05 && left_tile <= 0x0F) || (right_tile >= 0x05 && right_tile <= 0x0F)) {  // CHECK FOR ALL CAR TILE COLLISIONS
         respawn_frog();
     }
 }
@@ -111,10 +114,10 @@ void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;
 
-    // CRITICAL {
-    //     add_LCD(parallaxScroll);
-    // }
-    // set_interrupts(VBL_IFLAG | LCD_IFLAG);
+    CRITICAL {
+        add_LCD(parallaxScroll);
+    }
+    set_interrupts(VBL_IFLAG | LCD_IFLAG);
 
     DISABLE_VBL_TRANSFER;
     OBP1_REG = 0b10011100;
@@ -123,14 +126,12 @@ void main() {
     SHOW_SPRITES;
     DISPLAY_ON;
 
-    set_sprite_data(0, 4, frogger_16_tiles);
+    set_sprite_data(0, 4, frogger_tiles);
     set_bkg_data(0, 17, BKG_TILES);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
 
-    PLAYER.x = 40;  // 56
+    PLAYER.x = 56;
     PLAYER.y = 108;
-
-    car5_x = 0;
 
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
@@ -146,25 +147,25 @@ void main() {
                 case J_LEFT:
                     if (CHANGED_BUTTONS & J_LEFT) {
                         is_moving = TRUE;
-                        move_x = -12;  // -12
+                        move_x = -12;
                     }
                     break;
                 case J_RIGHT:
                     if (CHANGED_BUTTONS & J_RIGHT) {
                         is_moving = TRUE;
-                        move_x = 12;  // 12
+                        move_x = 12;
                     }
                     break;
                 case J_UP:
                     if (CHANGED_BUTTONS & J_UP) {
                         is_moving = TRUE;
-                        move_y = -8;  //-8
+                        move_y = -8;
                     }
                     break;
                 case J_DOWN:
-                    if (CHANGED_BUTTONS & J_DOWN) {
+                    if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN)) {  // PREVENT FROG FROM GOING BELOW SPAWN POINT
                         is_moving = TRUE;
-                        move_y = 8;  // 8
+                        move_y = 8;
                     }
                     break;
             }
@@ -183,26 +184,24 @@ void main() {
         // --------------------MOVE FROG -------------------------------//
 
         if (scx_counter % 6 == 0) {
-            scroll[0] -= 1;  // LOG 1
-            scroll[1] += 1;  // TURTLES 1
-            scroll[4] += 1;  // TURTLES 2
+            SCROLL_LOG1 -= 1;     // LOG 1
+            SCROLL_TURTLE1 += 1;  // TURTLES 1
+            SCROLL_TURTLE2 += 1;  // TURTLES 2
         }
         if (scx_counter % 5 == 0) {
-            scroll[3] -= 1;  // LOG 3
+            SCROLL_LOG3 -= 1;  // LOG 3
         }
         if (scx_counter % 4 == 0) {  // += moves the 'camera' to the right, resulting in objects on screen moving left
-            scroll[2] -= 1;          // LOG 2
-            scroll[7] += 1;          // CAR3
-            scroll[8] -= 1;          // CAR4
-            scroll[9] += 1;          // CAR5
-            // car5_x++;
+            SCROLL_LOG2 -= 1;        // LOG 2
+            SCROLL_CAR3 += 1;        // CAR3
+            SCROLL_CAR4 -= 1;        // CAR4
+            SCROLL_CAR5 += 1;        // CAR5
         }
-        // printf("%u\r", (car5_x)); //DEBUG
 
         if (scx_counter % 3 == 0) {
-            scroll[5] += 1;  // CAR 1 BUS
+            SCROLL_CAR1 += 1;  // CAR 1 BUS
         }
-        scroll[6] -= 1;  // CAR 2 PINK
+        SCROLL_CAR2 -= 1;  // CAR 2 PINK
 
         scx_counter++;
 

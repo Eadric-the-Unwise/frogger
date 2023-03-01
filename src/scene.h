@@ -5,6 +5,7 @@
 #include "../res/tiles/bkg_map.h"
 #include "../res/tiles/bkg_tiles.h"
 #include "../res/tiles/frogger.h"
+#include "../res/tiles/frogger_16.h"
 #define CHANGED_BUTTONS (last_joy ^ joy)
 
 UINT8 scroll[10];

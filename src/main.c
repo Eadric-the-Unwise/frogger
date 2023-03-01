@@ -8,10 +8,20 @@
 // CGB PALLETES
 // SOUND
 GameCharacter PLAYER;
+UINT8 car5_x;
 UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
 UINT8 scx_counter;
+
+void respawn_frog() {
+    is_moving = FALSE;
+    move_x = move_y = 0;
+    PLAYER.x = 40;
+    PLAYER.y = 108;
+    move_metasprite(
+        frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+}
 
 void move_frog() {
     if (move_x != 0) {
@@ -82,14 +92,29 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
     }
 }
 
+void collide_check(UINT8 frogx, UINT8 frogy) {
+    UINT16 left_x, right_x, indexY;  // tileindexTL
+    left_x = (frogx) / 8;
+    right_x = (frogx + 15) / 8;
+    indexY = (frogy + 8) / 8;
+    // tileindexTL = 20 * indexTLy + indexTLx;
+
+    UINT16 left_tile = get_bkg_tile_xy(left_x, indexY);  // 1024 total VRAM tiles 32x32
+    UINT16 right_tile = get_bkg_tile_xy(right_x, indexY);
+
+    if ((left_tile >= 0x0C && left_tile <= 0x0D) || (right_tile >= 0x0C && right_tile <= 0x0D)) {  // 12 and 13 car tile
+        respawn_frog();
+    }
+}
+
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;
 
-    CRITICAL {
-        add_LCD(parallaxScroll);
-    }
-    set_interrupts(VBL_IFLAG | LCD_IFLAG);
+    // CRITICAL {
+    //     add_LCD(parallaxScroll);
+    // }
+    // set_interrupts(VBL_IFLAG | LCD_IFLAG);
 
     DISABLE_VBL_TRANSFER;
     OBP1_REG = 0b10011100;
@@ -98,12 +123,14 @@ void main() {
     SHOW_SPRITES;
     DISPLAY_ON;
 
-    set_sprite_data(0, 4, frogger_tiles);
+    set_sprite_data(0, 4, frogger_16_tiles);
     set_bkg_data(0, 17, BKG_TILES);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
 
-    PLAYER.x = 56;
+    PLAYER.x = 40;  // 56
     PLAYER.y = 108;
+
+    car5_x = 0;
 
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
@@ -112,30 +139,32 @@ void main() {
         last_joy = joy;
         joy = joypad();
 
+        collide_check(PLAYER.x, PLAYER.y);
+
         if (!is_moving) {
             switch (joy) {
                 case J_LEFT:
                     if (CHANGED_BUTTONS & J_LEFT) {
                         is_moving = TRUE;
-                        move_x = -12;
+                        move_x = -12;  // -12
                     }
                     break;
                 case J_RIGHT:
                     if (CHANGED_BUTTONS & J_RIGHT) {
                         is_moving = TRUE;
-                        move_x = 12;
+                        move_x = 12;  // 12
                     }
                     break;
                 case J_UP:
                     if (CHANGED_BUTTONS & J_UP) {
                         is_moving = TRUE;
-                        move_y = -8;
+                        move_y = -8;  //-8
                     }
                     break;
                 case J_DOWN:
                     if (CHANGED_BUTTONS & J_DOWN) {
                         is_moving = TRUE;
-                        move_y = 8;
+                        move_y = 8;  // 8
                     }
                     break;
             }
@@ -166,7 +195,10 @@ void main() {
             scroll[7] += 1;          // CAR3
             scroll[8] -= 1;          // CAR4
             scroll[9] += 1;          // CAR5
+            // car5_x++;
         }
+        // printf("%u\r", (car5_x)); //DEBUG
+
         if (scx_counter % 3 == 0) {
             scroll[5] += 1;  // CAR 1 BUS
         }
@@ -175,10 +207,7 @@ void main() {
         scx_counter++;
 
         if (joy & J_SELECT) {
-            PLAYER.x = 56;
-            PLAYER.y = 108;
-            move_metasprite(
-                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            respawn_frog();
         }
         wait_vbl_done();
         refresh_OAM();

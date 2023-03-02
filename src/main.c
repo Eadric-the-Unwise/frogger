@@ -4,8 +4,7 @@
 
 #include "scene.h"
 //------------GOALS-------------//
-// LOG COLLISIONS
-// TURTLE COLLISIONS
+// ANIMATE TURTLES
 // CGB PALLETES
 // SOUND
 GameCharacter PLAYER;
@@ -13,16 +12,24 @@ UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
 UINT8 scx_counter;
+// UBYTE on_turtle, on_log3;
 
-void respawn_frog() {
+void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 56;
-    PLAYER.y = 108;
+    PLAYER.x = 56;  // 56
+    PLAYER.y = 60;  // 108
+    PLAYER.position = ON_NOTHING;
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 }
+void init_level() {
+    set_sprite_data(0, 4, frogger_tiles);
+    set_bkg_data(0, 28, BKG_TILES);
+    set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
 
+    reset_frog();
+}
 void move_frog() {
     if (move_x != 0) {
         PLAYER.x += (move_x < 0 ? -1 : 1);
@@ -34,7 +41,6 @@ void move_frog() {
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
     }
 }
-
 void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
     switch (LYC_REG) {
         case 0x00:  // first three stationary rows
@@ -91,22 +97,164 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
             break;
     }
 }
+void scroll_counters() {
+    if (scx_counter % 6 == 0) {
+        SCROLL_LOG1 -= 1;     // LOG 1
+        SCROLL_TURTLE1 += 1;  // TURTLES 1
+        SCROLL_TURTLE2 += 1;  // TURTLES 2
 
+        if (PLAYER.position == ON_TURTLE) {
+            PLAYER.x -= 1;
+            move_metasprite(
+                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        }
+        if (PLAYER.position == ON_LOG1) {
+            PLAYER.x += 1;
+            move_metasprite(
+                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        }
+    }
+    if (scx_counter % 5 == 0) {
+        SCROLL_LOG3 -= 1;  // LOG 3
+        if (PLAYER.position == ON_LOG3) {
+            PLAYER.x += 1;
+            move_metasprite(
+                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        }
+    }
+    if (scx_counter % 4 == 0) {  // += moves the 'camera' to the right, resulting in objects on screen moving left
+        SCROLL_LOG2 -= 1;        // LOG 2
+        SCROLL_CAR3 += 1;        // CAR3
+        SCROLL_CAR4 -= 1;        // CAR4
+        SCROLL_CAR5 += 1;        // CAR5
+        if (PLAYER.position == ON_LOG2) {
+            PLAYER.x += 1;
+            move_metasprite(
+                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        }
+    }
+
+    if (scx_counter % 3 == 0) {
+        SCROLL_CAR1 += 1;  // CAR 1 BUS
+    }
+    SCROLL_CAR2 -= 1;  // CAR 2 PINK
+
+    scx_counter++;
+}
+void win_check(UINT8 frogx, UINT8 frogy) {
+    UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
+    UINT8 left_offset, right_offset;
+
+    left_offset = WATER_OFFSET_L;
+    right_offset = WATER_OFFSET_R;
+
+    indexY = (frogy + 8) / 8;              // CALCULATE THE FROG'S Y ROW, USING HIS CENTER Y
+    left_x = (frogx + left_offset) / 8;    // CALCULATE THE LEFT OF FROG X
+    right_x = (frogx + right_offset) / 8;  // CALCULATE THE RIGHT OF FROG X
+
+    tileindex_L = 32 * indexY + left_x;
+    tileindex_R = 32 * indexY + right_x;
+
+    if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01) {
+        is_moving = FALSE;
+        move_x = move_y = 0;
+        PLAYER.x = 16;   // 56
+        PLAYER.y = 108;  // 108
+        PLAYER.position = ON_NOTHING;
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
+        is_moving = FALSE;
+        move_x = move_y = 0;
+        PLAYER.x = 48;   // 56
+        PLAYER.y = 108;  // 108
+        PLAYER.position = ON_NOTHING;
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    } else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03) {
+        is_moving = FALSE;
+        move_x = move_y = 0;
+        PLAYER.x = 64;   // 56
+        PLAYER.y = 108;  // 108
+        PLAYER.position = ON_NOTHING;
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    } else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04) {
+        is_moving = FALSE;
+        move_x = move_y = 0;
+        PLAYER.x = 88;   // 56
+        PLAYER.y = 108;  // 108
+        PLAYER.position = ON_NOTHING;
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    } else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05) {
+        is_moving = FALSE;
+        move_x = move_y = 0;
+        PLAYER.x = 112;  // 56
+        PLAYER.y = 108;  // 108
+        PLAYER.position = ON_NOTHING;
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    } else
+        reset_frog();
+}
 void collide_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY;
+    UINT8 left_offset, right_offset;
+    if (PLAYER.y >= STREET) {
+        left_offset = STREET_OFFSET_L;
+        right_offset = STREET_OFFSET_R;
+    } else {
+        left_offset = WATER_OFFSET_L;
+        right_offset = WATER_OFFSET_R;
+    }
 
-    indexY = (frogy + 8) / 8;                     // CALCULATE THE FROG'S Y ROW, USING HIS CENTER Y
-    UINT8 *scroll_ptr = scroll_remap[indexY];     // POINT TO THE CURRENT UINT8 SCROLL X VALUE
-    UINT8 offset = scroll_ptr ? *scroll_ptr : 0;  // IF POINTING TO NULL, THEN OFFSET IS 0. OTHERWISE, OFFSET EQUALS THE CURRENT SCROLL X VALUE
-    left_x = (frogx + offset) / 8;                // CALCULATE THE LEFT OF FROG X
-    right_x = (frogx + 15 + offset) / 8;          // CALCULATE THE RIGHT OF FROG X
+    indexY = (frogy + 8) / 8;                              // CALCULATE THE FROG'S Y ROW, USING HIS CENTER Y
+    UINT8 *scroll_ptr = scroll_remap[indexY];              // POINT TO THE CURRENT UINT8 SCROLL X VALUE
+    UINT8 vblank_offset = scroll_ptr ? *scroll_ptr : 0;    // IF POINTING TO NULL, THEN OFFSET IS 0. OTHERWISE, OFFSET EQUALS THE CURRENT SCROLL X VALUE
+    left_x = (frogx + left_offset + vblank_offset) / 8;    // CALCULATE THE LEFT OF FROG X
+    right_x = (frogx + right_offset + vblank_offset) / 8;  // CALCULATE THE RIGHT OF FROG X
 
     // 1024 total VRAM tiles 32x32
     UINT16 left_tile = get_bkg_tile_xy(left_x & 31, indexY);    // '& 31' WRAPPER PREVENTS VALUE FROM GOING HIGHER THAN 31. IT LOOPS BACK TO 0 (binary AND)
     UINT16 right_tile = get_bkg_tile_xy(right_x & 31, indexY);  // '& 31' WRAPPER PREVENTS VALUE FROM GOING HIGHER THAN 31. IT LOOPS BACK TO 0 (binary AND)
 
-    if ((left_tile >= 0x05 && left_tile <= 0x0F) || (right_tile >= 0x05 && right_tile <= 0x0F)) {  // CHECK FOR ALL CAR TILE COLLISIONS
-        respawn_frog();
+    //? PLAYER.y % 8 ==4
+
+    if (PLAYER.y >= STREET) {                                                                                                                  // ON OR BELOW THE SIDEWALK
+        if ((left_tile >= CAR_TILES_START && left_tile <= CAR_TILES_END) || (right_tile >= CAR_TILES_START && right_tile <= CAR_TILES_END)) {  // CHECK FOR ALL CAR TILE COLLISIONS
+            reset_frog();
+        }
+    } else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2) {
+        if ((left_tile >= TURTLE_TILES_START && left_tile <= TURTLE_TILES_END || left_tile >= TURTLE_TILES_END && right_tile <= TURTLE_TILES_END)) {  // CHECK ALL TURTLE TILES
+            PLAYER.position = ON_TURTLE;                                                                                                              // MOVES FROG AT TURTLE SPEED IN scroll_counters();
+        } else {
+            if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
+                reset_frog();
+        }
+    } else if (PLAYER.y == LOG1) {
+        if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END)) {  // CHECK ALL LOG TILES
+            PLAYER.position = ON_LOG1;                                                                                                      // MOVES FROG AT LOG SPEED IN scroll_counters();
+        } else {
+            if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
+                reset_frog();
+        }
+    } else if (PLAYER.y == LOG2) {
+        if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END)) {  // CHECK ALL LOG TILES
+            PLAYER.position = ON_LOG2;                                                                                                      // MOVES FROG AT LOG SPEED IN scroll_counters();
+        } else {
+            if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
+                reset_frog();
+        }
+    } else if (PLAYER.y == LOG3) {
+        if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END)) {  // CHECK ALL LOG TILES
+            PLAYER.position = ON_LOG3;                                                                                                      // MOVES FROG AT LOG SPEED IN scroll_counters();
+        } else {
+            if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
+                reset_frog();
+        }
+    } else if (PLAYER.y == WIN) {
+        win_check(PLAYER.x, PLAYER.y);
     }
 }
 
@@ -126,21 +274,17 @@ void main() {
     SHOW_SPRITES;
     DISPLAY_ON;
 
-    set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 17, BKG_TILES);
-    set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
-
-    PLAYER.x = 56;
-    PLAYER.y = 108;
-
-    move_metasprite(
-        frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+    init_level();
 
     while (1) {
         last_joy = joy;
         joy = joypad();
 
         collide_check(PLAYER.x, PLAYER.y);
+
+        if (joy & J_A) {
+            printf("%u\n", PLAYER.y);
+        }
 
         if (!is_moving) {
             switch (joy) {
@@ -160,12 +304,14 @@ void main() {
                     if (CHANGED_BUTTONS & J_UP) {
                         is_moving = TRUE;
                         move_y = -8;
+                        PLAYER.position = ON_NOTHING;
                     }
                     break;
                 case J_DOWN:
                     if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN)) {  // PREVENT FROG FROM GOING BELOW SPAWN POINT
                         is_moving = TRUE;
                         move_y = 8;
+                        PLAYER.position = ON_NOTHING;
                     }
                     break;
             }
@@ -183,30 +329,12 @@ void main() {
 
         // --------------------MOVE FROG -------------------------------//
 
-        if (scx_counter % 6 == 0) {
-            SCROLL_LOG1 -= 1;     // LOG 1
-            SCROLL_TURTLE1 += 1;  // TURTLES 1
-            SCROLL_TURTLE2 += 1;  // TURTLES 2
-        }
-        if (scx_counter % 5 == 0) {
-            SCROLL_LOG3 -= 1;  // LOG 3
-        }
-        if (scx_counter % 4 == 0) {  // += moves the 'camera' to the right, resulting in objects on screen moving left
-            SCROLL_LOG2 -= 1;        // LOG 2
-            SCROLL_CAR3 += 1;        // CAR3
-            SCROLL_CAR4 -= 1;        // CAR4
-            SCROLL_CAR5 += 1;        // CAR5
-        }
-
-        if (scx_counter % 3 == 0) {
-            SCROLL_CAR1 += 1;  // CAR 1 BUS
-        }
-        SCROLL_CAR2 -= 1;  // CAR 2 PINK
-
-        scx_counter++;
+        // ---------------- SCROLL COUNTERS --------------------------- //
+        scroll_counters();
+        // ---------------- SCROLL COUNTERS --------------------------- //
 
         if (joy & J_SELECT) {
-            respawn_frog();
+            reset_frog();
         }
         wait_vbl_done();
         refresh_OAM();

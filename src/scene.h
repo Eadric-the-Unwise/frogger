@@ -4,14 +4,47 @@
 
 #include "../res/tiles/bkg_map.h"
 #include "../res/tiles/bkg_tiles.h"
+#include "../res/tiles/collision_map.h"
 #include "../res/tiles/frogger.h"
 #include "../res/tiles/frogger_16.h"
+
 #define CHANGED_BUTTONS (last_joy ^ joy)
+
+#define WIN 12
+#define LOG1 20
+#define TURTLE1 28
+#define LOG2 36
+#define LOG3 44
+#define TURTLE2 52
+#define STREET 60
+
+#define STREET_OFFSET_L 2
+#define STREET_OFFSET_R 13
+#define WATER_OFFSET_L 6
+#define WATER_OFFSET_R 9
+
+#define CAR_TILES_START 0x05
+#define CAR_TILES_END 0x0F
+
+#define TURTLE_TILES_START 0x10
+#define TURTLE_TILES_END 0x12
+
+#define LOG_TILES_START 0x13
+#define LOG_TILES_END 0x15
+
+typedef enum {
+    ON_NOTHING,
+    ON_TURTLE,
+    ON_LOG3,
+    ON_LOG2,
+    ON_LOG1
+} position_e;
 
 typedef struct GameCharacter {
     UBYTE spawn;
     INT16 x;
     INT16 y;
+    position_e position;
 } GameCharacter;
 
 UINT8 scroll[10];  // VALUES THE AMOUNT IT HAS SCROLLED

@@ -17,15 +17,15 @@ UINT8 scx_counter;
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 56;  // 56
-    PLAYER.y = 60;  // 108
+    PLAYER.x = 56;   // 56
+    PLAYER.y = 108;  // 108
     PLAYER.position = ON_NOTHING;
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 }
 void init_level() {
     set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 28, BKG_TILES);
+    set_bkg_data(0, 34, BKG_TILES);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
 
     reset_frog();
@@ -156,45 +156,20 @@ void win_check(UINT8 frogx, UINT8 frogy) {
     tileindex_R = 32 * indexY + right_x;
 
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01) {
-        is_moving = FALSE;
-        move_x = move_y = 0;
-        PLAYER.x = 16;   // 56
-        PLAYER.y = 108;  // 108
-        PLAYER.position = ON_NOTHING;
-        move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
+        reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
-        is_moving = FALSE;
-        move_x = move_y = 0;
-        PLAYER.x = 48;   // 56
-        PLAYER.y = 108;  // 108
-        PLAYER.position = ON_NOTHING;
-        move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
+        reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03) {
-        is_moving = FALSE;
-        move_x = move_y = 0;
-        PLAYER.x = 64;   // 56
-        PLAYER.y = 108;  // 108
-        PLAYER.position = ON_NOTHING;
-        move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
+        reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04) {
-        is_moving = FALSE;
-        move_x = move_y = 0;
-        PLAYER.x = 88;   // 56
-        PLAYER.y = 108;  // 108
-        PLAYER.position = ON_NOTHING;
-        move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
+        reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05) {
-        is_moving = FALSE;
-        move_x = move_y = 0;
-        PLAYER.x = 112;  // 56
-        PLAYER.y = 108;  // 108
-        PLAYER.position = ON_NOTHING;
-        move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+        set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
+        reset_frog();
     } else
         reset_frog();
 }
@@ -279,13 +254,10 @@ void main() {
     while (1) {
         last_joy = joy;
         joy = joypad();
-
+        // -------------------- COLLISION CHECK -------------------------------//
         collide_check(PLAYER.x, PLAYER.y);
 
-        if (joy & J_A) {
-            printf("%u\n", PLAYER.y);
-        }
-
+        // -------------------- BUTTON INPUT -------------------------------//
         if (!is_moving) {
             switch (joy) {
                 case J_LEFT:
@@ -327,14 +299,15 @@ void main() {
         } else if (move_x == 0 || move_y == 0)
             is_moving = FALSE;
 
-        // --------------------MOVE FROG -------------------------------//
-
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
-        // ---------------- SCROLL COUNTERS --------------------------- //
 
+        // -------------------- DEBUG -------------------------------//
         if (joy & J_SELECT) {
             reset_frog();
+        }
+        if (joy & J_A) {
+            printf("%u\n", PLAYER.y);
         }
         wait_vbl_done();
         refresh_OAM();

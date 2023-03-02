@@ -45,4 +45,4 @@
 @REM C:\c_code\gbdk\bin\png2asset res\tiles\bullet.png -px -8 -py -16 -sw 16 -sh 16 -sp -spr8x16 -b 1 0x00 -keep_palette_order
 @REM C:\c_code\gbdk\bin\png2asset res\tiles\galaga.png -px -8 -py -16 -sw 16 -sh 16 -sp 0x00 -spr8x16 -b 1 -keep_palette_order
 
-C:\c_code\gbdk\bin\png2asset res\tiles\frogger_16.png -px -8 -py -16 -sw 16 -sh 16 -sp -spr8x16 -b 1 0x00 -keep_palette_order
+C:\c_code\gbdk\bin\png2asset res\tiles\frogger.png -px -8 -py -16 -sw 16 -sh 16 -sp -spr8x16 -b 1 0x00 -keep_palette_order

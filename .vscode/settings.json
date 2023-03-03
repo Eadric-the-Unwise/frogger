@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "scene.h": "c"
+        "scene.h": "c",
+        "type_traits": "c"
     }
 }

@@ -5,14 +5,22 @@
 #include "scene.h"
 //------------GOALS-------------//
 // ANIMATE TURTLES
+// WIN SCREEN
+// SCORE BOARD
+// 1 UP SYSTEM
+// GAME OVER
 // CGB PALLETES
 // SOUND
+// STAGE 2
 GameCharacter PLAYER;
 UINT8 joy, last_joy;
 UBYTE is_moving;
 INT8 move_x, move_y;
-UINT8 scx_counter;
+UINT8 scx_counter, turtle_counter;
 // UBYTE on_turtle, on_log3;
+UINT8 turtle_tiles[4] = {0x10, 0x11, 0x12, 0x12};
+UINT8 turtle_tile_index;
+// UINT8 *turtle_tile_ptr = turtle_tiles;
 
 void reset_frog() {
     is_moving = FALSE;
@@ -232,6 +240,23 @@ void collide_check(UINT8 frogx, UINT8 frogy) {
         win_check(PLAYER.x, PLAYER.y);
     }
 }
+void animate_turtles() {
+    turtle_counter++;
+    UINT8 row1, row2;
+    if (turtle_counter % 16 == 0) {
+        UINT8 frame = turtle_tiles[turtle_tile_index++ % 4];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+        for (UINT8 i = 0; i < 32; i++) {
+            row1 = get_bkg_tile_xy(i, 4);  // TURTLES1 ROW
+            row2 = get_bkg_tile_xy(i, 7);  // TURTLES2 ROW
+            if (row1 >= TURTLE_TILES_START && row1 <= TURTLE_TILES_END) {
+                set_bkg_tile_xy(i, 4, frame);  // TURTLES1 ROW
+            }
+            if (row2 >= TURTLE_TILES_START && row2 <= TURTLE_TILES_END) {
+                set_bkg_tile_xy(i, 7, frame);  // TURTLES2 ROW
+            }
+        }
+    }
+}
 
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
@@ -301,13 +326,15 @@ void main() {
 
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
-
+        // ---------------- ANIMATE TURTLES --------------------------- //
+        animate_turtles();
         // -------------------- DEBUG -------------------------------//
         if (joy & J_SELECT) {
             reset_frog();
         }
         if (joy & J_A) {
-            printf("%u\n", PLAYER.y);
+            // printf("%u\n", PLAYER.y);
+            set_bkg_tile_xy(4, 4, 0x11);
         }
         wait_vbl_done();
         refresh_OAM();

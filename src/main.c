@@ -14,12 +14,13 @@
 // STAGE 2
 GameCharacter PLAYER;
 UINT8 joy, last_joy;
-UBYTE is_moving;
+UBYTE is_moving, turtles_diving;
 INT8 move_x, move_y;
-UINT8 scx_counter, turtle_counter;
+UINT8 scx_counter, turtle_counter, turtle_dive_counter;
 // UBYTE on_turtle, on_log3;
 UINT8 turtle_tiles[4] = {0x10, 0x11, 0x12, 0x12};
-UINT8 turtle_tile_index;
+UINT8 dive_tiles[7] = {0x22, 0x23, 0x02, 0x02, 0x23, 0x22, NULL};
+UINT8 turtle_tile_index, dive_tile_index;
 // UINT8 *turtle_tile_ptr = turtle_tiles;
 
 void reset_frog() {
@@ -33,8 +34,9 @@ void reset_frog() {
 }
 void init_level() {
     set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 34, BKG_TILES);
+    set_bkg_data(0, 36, BKG_TILES);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
+    turtles_diving = FALSE;
 
     reset_frog();
 }
@@ -242,9 +244,12 @@ void collide_check(UINT8 frogx, UINT8 frogy) {
 }
 void animate_turtles() {
     turtle_counter++;
+    turtle_dive_counter++;
+    // turtle_dive_counter++;
     UINT8 row1, row2;
+    UINT8 frame = NULL;
     if (turtle_counter % 16 == 0) {
-        UINT8 frame = turtle_tiles[turtle_tile_index++ % 4];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+        frame = turtle_tiles[turtle_tile_index++ % 4];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
         for (UINT8 i = 0; i < 32; i++) {
             row1 = get_bkg_tile_xy(i, 4);  // TURTLES1 ROW
             row2 = get_bkg_tile_xy(i, 7);  // TURTLES2 ROW
@@ -256,7 +261,28 @@ void animate_turtles() {
             }
         }
     }
+    if ((turtle_dive_counter == 48) && (!turtles_diving)) {
+        turtles_diving = TRUE;
+    }
+    if (turtles_diving) {
+        if (turtle_counter % 16 == 0) {
+            UINT8 dive_frame = dive_tiles[dive_tile_index++ % 7];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+
+            if (dive_frame == NULL) {
+                set_bkg_tile_xy(0x0A, 4, frame);
+                turtles_diving = FALSE;
+                turtle_dive_counter = 0;
+            } else
+                set_bkg_tile_xy(0x0A, 4, dive_frame);
+        }
+    }
 }
+// void animate_dive_turtles() {
+//     if (turtle_counter % 16 == 0) {
+//         UINT8 frame = dive_tiles[dive_tile_index++ % 6];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+//         set_bkg_tile_xy(0x0A, 4, frame);
+//     }
+// }
 
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
@@ -327,6 +353,9 @@ void main() {
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
         // ---------------- ANIMATE TURTLES --------------------------- //
+        // if (turtles_diving) {
+        //     animate_dive_turtles();
+        // }
         animate_turtles();
         // -------------------- DEBUG -------------------------------//
         if (joy & J_SELECT) {

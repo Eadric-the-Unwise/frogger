@@ -4,8 +4,8 @@
 
 #include "scene.h"
 //------------GOALS-------------//
-// WIN SCREEN
 // SCORE BOARD
+// WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
 // CGB PALLETES
@@ -15,13 +15,13 @@ GameCharacter PLAYER;
 UINT8 joy, last_joy;
 UBYTE is_moving, turtles_diving;
 INT8 move_x, move_y;
-UINT8 scx_counter, turtle_counter, turtle_dive_counter;
+UINT8 scx_counter, turtle_counter, dive_counter;
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};        // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL};  // ROW 2 TURTLES
 
-UINT8 turtle_tiles[] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES_END};                                        // REGULAR TURTLE ANIMATION LOOP
-UINT8 dive_tiles[] = {TURTLE_DIVE_START, TURTLE_DIVE_END, WATER_TILE, WATER_TILE, TURTLE_DIVE_END, TURTLE_DIVE_START, NULL};  // DIVING TURTLE ANIMATION
+UINT8 turtle_tiles[] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES_END};                                    // REGULAR TURTLE ANIMATION LOOP
+UINT8 dive_tiles[] = {DIVE_TILES_START, DIVE_TILES_END, WATER_TILE, WATER_TILE, DIVE_TILES_END, DIVE_TILES_START, NULL};  // DIVING TURTLE ANIMATION
 UINT8 turtle_tile_index, dive_tile_index;
 
 void reset_frog() {
@@ -212,8 +212,8 @@ void collide_check(UINT8 frogx, UINT8 frogy) {
             reset_frog();
         }
     } else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2) {
-        if ((left_tile >= TURTLE_TILES_START && left_tile <= TURTLE_DIVE_END || left_tile >= TURTLE_TILES_START && right_tile <= TURTLE_DIVE_END)) {  // CHECK ALL TURTLE TILES
-            PLAYER.position = ON_TURTLE;                                                                                                              // MOVES FROG AT TURTLE SPEED IN scroll_counters();
+        if ((left_tile >= TURTLE_TILES_START && left_tile <= DIVE_TILES_END || left_tile >= TURTLE_TILES_START && right_tile <= DIVE_TILES_END)) {  // CHECK ALL TURTLE TILES
+            PLAYER.position = ON_TURTLE;                                                                                                            // MOVES FROG AT TURTLE SPEED IN scroll_counters();
         } else {
             if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
                 reset_frog();
@@ -244,46 +244,50 @@ void collide_check(UINT8 frogx, UINT8 frogy) {
     }
 }
 void animate_turtles() {
-    turtle_counter++;       // REGULAR TURTLES ANIMATION TIMER
-    turtle_dive_counter++;  // DIVING TURTLES ANIMATION TIMER
+    turtle_counter++;  // REGULAR TURTLES ANIMATION TIMER
+    dive_counter++;    // DIVING TURTLES ANIMATION TIMER
     UINT8 row1, row2;
-    UINT8 frame = NULL;
-    if (turtle_counter % 16 == 0) {                     // ANIMATE ALL TURTLES FRAME EVERY 16 GAME LOOPS
-        frame = turtle_tiles[turtle_tile_index++ % 4];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+    UINT8 regular_frame = NULL;  // REGULAR TURTLE ANIMATION LOOP FRAMES
+
+    // -------------------------- REGULAR TURTLES -------------------------- //
+    if (turtle_counter % 16 == 0) {                             // ANIMATE ALL TURTLES FRAME EVERY 16 GAME LOOPS
+        regular_frame = turtle_tiles[turtle_tile_index++ % 4];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
         for (UINT8 i = 0; i < 32; i++) {
             row1 = get_bkg_tile_xy(i, 4);  // TURTLES1 ROW
             row2 = get_bkg_tile_xy(i, 7);  // TURTLES2 ROW
-            if (row1 >= TURTLE_TILES_START && row1 <= TURTLE_DIVE_END) {
-                set_bkg_tile_xy(i, 4, frame);  // TURTLES1 ROW
+            if (row1 >= TURTLE_TILES_START && row1 <= TURTLE_TILES_END) {
+                set_bkg_tile_xy(i, 4, regular_frame);  // TURTLES1 ROW
             }
-            if (row2 >= TURTLE_TILES_START && row2 <= TURTLE_DIVE_END) {
-                set_bkg_tile_xy(i, 7, frame);  // TURTLES2 ROW
+            if (row2 >= TURTLE_TILES_START && row2 <= TURTLE_TILES_END) {
+                set_bkg_tile_xy(i, 7, regular_frame);  // TURTLES2 ROW
             }
         }
     }
-    if ((turtle_dive_counter == 48) && (!turtles_diving)) {  // BEGIN DIVING TURTLES ANIMATIONS AFTER 48 GAME LOOPS
-        turtles_diving = TRUE;                               // SEE BELOW
+
+    // -------------------------- DIVING TURTLES -------------------------- //
+    if ((dive_counter == 48) && (!turtles_diving)) {  // BEGIN DIVING TURTLES ANIMATIONS AFTER 48 GAME LOOPS
+        turtles_diving = TRUE;                        // SEE BELOW
     }
     if (turtles_diving) {  // BEGIN DIVING ANIMATIONS
         if (turtle_counter % 16 == 0) {
-            UINT8 dive_frame = dive_tiles[dive_tile_index++ % 7];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
+            UINT8 diving_frame = dive_tiles[dive_tile_index++ % 7];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
 
-            if (dive_frame == NULL) {  // IF THE DIVER ANIMATION IS COMPLETED
+            if (diving_frame == NULL) {  // IF THE DIVER ANIMATION IS COMPLETED
                 for (UINT8 *ptr = turtle_divers1; *ptr != NULL; ptr++) {
-                    set_bkg_tile_xy(*ptr, 4, frame);  // RETURN ALL ROW 1 DIVING TURTLES TO ALL REGULAR TURTLES' ANIMATION FRAME
+                    set_bkg_tile_xy(*ptr, 4, regular_frame);  // RETURN ALL ROW 1 DIVING TURTLES TO ALL REGULAR TURTLES' ANIMATION FRAME
                 }
                 for (UINT8 *ptr = turtle_divers2; *ptr != NULL; ptr++) {
-                    set_bkg_tile_xy(*ptr, 7, frame);  // RETURN ALL ROW 2 DIVING TURTLES TO ALL REGULAR TURTLES' ANIMATION FRAME
+                    set_bkg_tile_xy(*ptr, 7, regular_frame);  // RETURN ALL ROW 2 DIVING TURTLES TO ALL REGULAR TURTLES' ANIMATION FRAME
                 }
 
-                turtles_diving = FALSE;   // END DIVING ANIMATION
-                turtle_dive_counter = 0;  // RESET DIVE COUNTER
-            } else {                      // ANIMATE DIVE ANIMATIONS
+                turtles_diving = FALSE;  // END DIVING ANIMATION
+                dive_counter = 0;        // RESET DIVE COUNTER
+            } else {                     // ANIMATE DIVE ANIMATIONS
                 for (UINT8 *ptr = turtle_divers1; *ptr != NULL; ptr++) {
-                    set_bkg_tile_xy(*ptr, 4, dive_frame);  // ROW 1 TURTLES
+                    set_bkg_tile_xy(*ptr, 4, diving_frame);  // ROW 1 TURTLES
                 }
                 for (UINT8 *ptr = turtle_divers2; *ptr != NULL; ptr++) {
-                    set_bkg_tile_xy(*ptr, 7, dive_frame);  // ROW 2 TURTLES
+                    set_bkg_tile_xy(*ptr, 7, diving_frame);  // ROW 2 TURTLES
                 }
             }
         }

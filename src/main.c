@@ -18,8 +18,8 @@ UBYTE is_moving, turtles_diving;
 INT8 move_x, move_y;
 UINT8 scx_counter, turtle_counter, turtle_dive_counter;
 // UBYTE on_turtle, on_log3;
-UINT8 turtle_tiles[4] = {0x10, 0x11, 0x12, 0x12};
-UINT8 dive_tiles[7] = {0x22, 0x23, 0x02, 0x02, 0x23, 0x22, NULL};
+UINT8 turtle_tiles[4] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES_END};
+UINT8 dive_tiles[7] = {TURTLE_DIVE_START, TURTLE_DIVE_END, WATER_TILE, WATER_TILE, TURTLE_DIVE_END, TURTLE_DIVE_START, NULL};
 UINT8 turtle_tile_index, dive_tile_index;
 // UINT8 *turtle_tile_ptr = turtle_tiles;
 
@@ -211,7 +211,7 @@ void collide_check(UINT8 frogx, UINT8 frogy) {
             reset_frog();
         }
     } else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2) {
-        if ((left_tile >= TURTLE_TILES_START && left_tile <= TURTLE_TILES_END || left_tile >= TURTLE_TILES_END && right_tile <= TURTLE_TILES_END)) {  // CHECK ALL TURTLE TILES
+        if ((left_tile >= TURTLE_TILES_START && left_tile <= TURTLE_DIVE_END || left_tile >= TURTLE_TILES_START && right_tile <= TURTLE_DIVE_END)) {  // CHECK ALL TURTLE TILES
             PLAYER.position = ON_TURTLE;                                                                                                              // MOVES FROG AT TURTLE SPEED IN scroll_counters();
         } else {
             if (!is_moving)  // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
@@ -280,12 +280,6 @@ void animate_turtles() {
         }
     }
 }
-// void animate_dive_turtles() {
-//     if (turtle_counter % 16 == 0) {
-//         UINT8 frame = dive_tiles[dive_tile_index++ % 6];  // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
-//         set_bkg_tile_xy(0x0A, 4, frame);
-//     }
-// }
 
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //

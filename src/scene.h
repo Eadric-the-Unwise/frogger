@@ -24,14 +24,19 @@
 #define WATER_OFFSET_L 6
 #define WATER_OFFSET_R 9
 
+#define WATER_TILE 0x02
+
 #define CAR_TILES_START 0x05
 #define CAR_TILES_END 0x0F
 
 #define TURTLE_TILES_START 0x10
 #define TURTLE_TILES_END 0x12
 
-#define LOG_TILES_START 0x13
-#define LOG_TILES_END 0x15
+#define TURTLE_DIVE_START 0x13
+#define TURTLE_DIVE_END 0x14
+
+#define LOG_TILES_START 0x15
+#define LOG_TILES_END 0x17
 
 typedef enum {
     ON_NOTHING,

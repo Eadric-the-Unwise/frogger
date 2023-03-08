@@ -270,10 +270,13 @@ void animate_turtles() {
 
             if (dive_frame == NULL) {
                 set_bkg_tile_xy(0x0A, 4, frame);
+                set_bkg_tile_xy(0x0B, 4, frame);
                 turtles_diving = FALSE;
                 turtle_dive_counter = 0;
-            } else
+            } else {
                 set_bkg_tile_xy(0x0A, 4, dive_frame);
+                set_bkg_tile_xy(0x0B, 4, dive_frame);
+            }
         }
     }
 }

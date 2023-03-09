@@ -27,7 +27,8 @@ UINT8 turtle_tile_index, dive_tile_index;
 
 uint8_t *vram_addr;
 
-UINT32 score = 7654321;
+// UINT32 score = 87654321; //USE THIS IF HIGHER THAN 65535
+UINT16 score = 2006;
 UINT8 text_buffer[16];  // if score = 150, text_buffer[0] = '1',text_buffer[1] = '5', text_buffer[2] = '0', text_buffer[3] = 0
 
 // void render_32bit_score(UINT32 score, UINT8 *buffer) {  // THIS FUNCTION IS A CUSTOM SPRINTF BECAUSE SPRINTF ONLY SUPPORTS UP TO 16 BIT SON GB. THIS FUNC ALLOWS US TO USE 32BIT AND MANUALLY MANIPULATE THE ARRAY
@@ -41,7 +42,6 @@ UINT8 text_buffer[16];  // if score = 150, text_buffer[0] = '1',text_buffer[1] =
 //     }
 //     // REMEMBER bugger is actually text_buffer[?] because of previous buffer++! Hence why we need old_buffer
 //     *buffer = 0;  // when the while loop runs out of digits to add to the buffer, change the next character in the array to equal 0. This is check inside of update_score()'s for loop.
-
 //     reverse(old_buffer);  // reverses the pointer's contents until it reaches a 0 or NULL in the array, so that the score displays correctly
 // }
 

@@ -82,7 +82,8 @@ void init_level() {
 
     reset_frog();
 }
-void move_frog() {
+void move_frog() {  // MOVES THE FROG X OR Y 1 FRAME
+    // (MOVE_X AND MOVE_Y ARE UPDATED IN update_move_xy)
     if (move_x != 0) {
         PLAYER.x += (move_x < 0 ? -1 : 1);
         move_metasprite(
@@ -92,6 +93,16 @@ void move_frog() {
         move_metasprite(
             frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
     }
+}
+void update_move_xy() {
+    if (move_x != 0) {
+        move_frog();
+        move_x += move_x < 0 ? 1 : -1;  //---- ADD 1 OR -1 TO THE CURRENT MOVE_X
+    } else if (move_y != 0) {
+        move_frog();
+        move_y += move_y < 0 ? 1 : -1;      // ADD 1 OR -1 TO THE CURRENT MOVE_Y
+    } else if (move_x == 0 || move_y == 0)  //
+        is_moving = FALSE;                  // ALLOWS JOY PRESS
 }
 void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
     switch (LYC_REG) {
@@ -391,16 +402,7 @@ void main() {
             }
         }
         // --------------------MOVE FROG -------------------------------//
-
-        if (move_x != 0) {
-            move_frog();
-            move_x += move_x < 0 ? 1 : -1;
-        } else if (move_y != 0) {
-            move_frog();
-            move_y += move_y < 0 ? 1 : -1;
-        } else if (move_x == 0 || move_y == 0)
-            is_moving = FALSE;
-
+        update_move_xy();
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
         // ---------------- ANIMATE TURTLES --------------------------- //

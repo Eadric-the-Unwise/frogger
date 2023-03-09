@@ -26,11 +26,13 @@ UINT8 turtle_tiles[] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES
 UINT8 dive_tiles[] = {DIVE_TILES_START, DIVE_TILES_END, WATER_TILE, WATER_TILE, DIVE_TILES_END, DIVE_TILES_START, NULL};  // DIVING TURTLE ANIMATION
 UINT8 turtle_tile_index, dive_tile_index;
 
+UINT8 y_min;
+
 uint8_t *vram_addr;
 
 // UINT32 score = 87654321; //USE THIS IF HIGHER THAN 65535
 UINT16 score;
-UINT8 text_buffer[16];  // if score = 150, text_buffer[0] = '1',text_buffer[1] = '5', text_buffer[2] = '0', text_buffer[3] = 0
+UINT8 text_buffer[5];  // MAX SCORE 9999 = {'9', '9', '9', '9', 0}; // if score = 150, text_buffer[0] = '1',text_buffer[1] = '5', text_buffer[2] = '0', text_buffer[3] = 0
 
 // void render_32bit_score(UINT32 score, UINT8 *buffer) {  // THIS FUNCTION IS A CUSTOM SPRINTF BECAUSE SPRINTF ONLY SUPPORTS UP TO 16 BIT SON GB. THIS FUNC ALLOWS US TO USE 32BIT AND MANUALLY MANIPULATE THE ARRAY
 //     UINT8 *old_buffer = buffer;                         // buffer = text_buffer[0]
@@ -61,12 +63,12 @@ void update_score() {
         vram_addr++;
     }
 }
-
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
     PLAYER.x = 56;   // 56
     PLAYER.y = 108;  // 108
+    y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
@@ -100,9 +102,15 @@ void update_move_xy() {
         move_x += move_x < 0 ? 1 : -1;  //---- ADD 1 OR -1 TO THE CURRENT MOVE_X
     } else if (move_y != 0) {
         move_frog();
-        move_y += move_y < 0 ? 1 : -1;      // ADD 1 OR -1 TO THE CURRENT MOVE_Y
-    } else if (move_x == 0 || move_y == 0)  //
-        is_moving = FALSE;                  // ALLOWS JOY PRESS
+        move_y += move_y < 0 ? 1 : -1;        // ADD 1 OR -1 TO THE CURRENT MOVE_Y
+    } else if (move_x == 0 || move_y == 0) {  //
+        is_moving = FALSE;                    // ALLOWS JOY PRESS
+        if (PLAYER.y < y_min) {
+            score += 10;
+            update_score();
+            y_min = PLAYER.y;
+        }
+    }
 }
 void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
     switch (LYC_REG) {

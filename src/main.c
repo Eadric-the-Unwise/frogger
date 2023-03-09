@@ -6,6 +6,7 @@
 #include "scene.h"
 //------------GOALS-------------//
 // SCORE BOARD
+// TIMER + SCORE
 // WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
@@ -28,7 +29,7 @@ UINT8 turtle_tile_index, dive_tile_index;
 uint8_t *vram_addr;
 
 // UINT32 score = 87654321; //USE THIS IF HIGHER THAN 65535
-UINT16 score = 2006;
+UINT16 score;
 UINT8 text_buffer[16];  // if score = 150, text_buffer[0] = '1',text_buffer[1] = '5', text_buffer[2] = '0', text_buffer[3] = 0
 
 // void render_32bit_score(UINT32 score, UINT8 *buffer) {  // THIS FUNCTION IS A CUSTOM SPRINTF BECAUSE SPRINTF ONLY SUPPORTS UP TO 16 BIT SON GB. THIS FUNC ALLOWS US TO USE 32BIT AND MANUALLY MANIPULATE THE ARRAY
@@ -76,6 +77,7 @@ void init_level() {
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     turtles_diving = FALSE;
+    score = 0;
     update_score();
 
     reset_frog();

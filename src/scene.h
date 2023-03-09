@@ -5,6 +5,7 @@
 #include "../res/tiles/bkg_map.h"
 #include "../res/tiles/bkg_tiles.h"
 #include "../res/tiles/collision_map.h"
+#include "../res/tiles/font.h"
 #include "../res/tiles/frogger.h"
 #include "../res/tiles/frogger_16.h"
 #include "../res/tiles/win_frog.h"

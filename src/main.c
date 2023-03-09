@@ -1,6 +1,7 @@
 #include <gb/gb.h>
 #include <gbdk/metasprites.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "scene.h"
 //------------GOALS-------------//
@@ -24,6 +25,42 @@ UINT8 turtle_tiles[] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES
 UINT8 dive_tiles[] = {DIVE_TILES_START, DIVE_TILES_END, WATER_TILE, WATER_TILE, DIVE_TILES_END, DIVE_TILES_START, NULL};  // DIVING TURTLE ANIMATION
 UINT8 turtle_tile_index, dive_tile_index;
 
+uint8_t *vram_addr;
+
+UINT32 score = 7654321;
+UINT8 text_buffer[16];  // if score = 150, text_buffer[0] = '1',text_buffer[1] = '5', text_buffer[2] = '0', text_buffer[3] = 0
+
+// void render_32bit_score(UINT32 score, UINT8 *buffer) {  // THIS FUNCTION IS A CUSTOM SPRINTF BECAUSE SPRINTF ONLY SUPPORTS UP TO 16 BIT SON GB. THIS FUNC ALLOWS US TO USE 32BIT AND MANUALLY MANIPULATE THE ARRAY
+//     UINT8 *old_buffer = buffer;                         // buffer = text_buffer[0]
+//     while (score > 0) {
+//         // dereference buffer[0] (*), change its value, THEN ++ to buffer[1] (++buffer vs buffer++) pre-increment vs post-increment
+//         // score % 10 gets me the farthest right digit, then dividing by 10 removes that right digit, which brings me to the next digit to its left
+//         // By adding '0', we convert the integer into an ASCII code value. So: 5 + '0' = '5'
+//         *buffer++ = (score % 10) + '0';
+//         score /= 10;  // shifts out the rightmost digit
+//     }
+//     // REMEMBER bugger is actually text_buffer[?] because of previous buffer++! Hence why we need old_buffer
+//     *buffer = 0;  // when the while loop runs out of digits to add to the buffer, change the next character in the array to equal 0. This is check inside of update_score()'s for loop.
+
+//     reverse(old_buffer);  // reverses the pointer's contents until it reaches a 0 or NULL in the array, so that the score displays correctly
+// }
+
+void update_score() {
+    UINT8 vram_offset = 96;
+    vram_addr = get_bkg_xy_addr(0, 15);
+
+    // if (score > 65535) {
+    //     render_32bit_score(score, text_buffer);
+    // } else
+    // sprintf maxes at 16 bits on GAMEBOY
+    sprintf(text_buffer, "%u", score);  // stores the ascii code value into a buffer, one value per text_buffer[] item (SEE text_buffer[16] above)
+
+    for (UINT8 *ptr = text_buffer; *ptr != 0; ptr++) {  // when for loop hits a 0 (NOT A '0', WHICH IS ASCII), the loop ends
+        set_vram_byte(vram_addr, *ptr + vram_offset);
+        vram_addr++;
+    }
+}
+
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
@@ -36,8 +73,10 @@ void reset_frog() {
 void init_level() {
     set_sprite_data(0, 4, frogger_tiles);
     set_bkg_data(0, 36, BKG_TILES);
+    set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     turtles_diving = FALSE;
+    update_score();
 
     reset_frog();
 }

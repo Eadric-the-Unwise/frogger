@@ -7,6 +7,7 @@
 //------------GOALS-------------//
 // SCORE BOARD
 // TIMER + SCORE
+// debug
 // WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
@@ -19,7 +20,7 @@ UBYTE is_moving, turtles_diving;     // IS MOVING = LOCKS JOY WHILE FROG IS ANIM
 INT8 move_x, move_y;                 // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
 UINT8 scx_counter;                   // VBLANK INTERRUPT COUNTER
 UINT8 turtle_counter, dive_counter;  // TURTLE ANIMATION COUNTER
-INT16 timer;                         // STAGE TIMER
+UINT16 timer;                        // STAGE TIMER
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};        // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL};  // ROW 2 TURTLES
@@ -76,7 +77,7 @@ void reset_frog() {
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 }
 void reset_timer() {
-    timer = -32;
+    timer = (UINT16)-32;  // converts -32 to equivilent Unsigned value
     set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
 }
 void init_level() {
@@ -362,10 +363,12 @@ void animate_turtles() {
 
 void stage_timer() {
     UINT8 current_tile, tile_offset, x_offset;
-    tile_offset = (timer / 32) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
-    x_offset = timer / (32 * 8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
-    current_tile = get_bkg_tile_xy(6 + x_offset, 16);
-    if (timer >= 0 && timer % 32 == 0) {
+
+    if (timer != (UINT16)-32 && timer % 32 == 0) {
+        tile_offset = (timer / 32) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
+        x_offset = timer / (32 * 8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
+        current_tile = get_bkg_tile_xy(6 + x_offset, 16);
+
         if (current_tile == 0x25 + tile_offset) {
             set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
         }

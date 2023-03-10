@@ -8,6 +8,7 @@
 #include "../res/tiles/font.h"
 #include "../res/tiles/frogger.h"
 #include "../res/tiles/frogger_16.h"
+#include "../res/tiles/reset_timer.h"
 #include "../res/tiles/win_frog.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)

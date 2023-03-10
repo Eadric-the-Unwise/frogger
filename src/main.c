@@ -13,11 +13,13 @@
 // CGB PALLETES
 // SOUND
 // STAGE 2
-GameCharacter PLAYER;
+GameCharacter PLAYER;  // FROG
 UINT8 joy, last_joy;
-UBYTE is_moving, turtles_diving;
-INT8 move_x, move_y;
-UINT8 scx_counter, turtle_counter, dive_counter;
+UBYTE is_moving, turtles_diving;     // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION
+INT8 move_x, move_y;                 // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
+UINT8 scx_counter;                   // VBLANK INTERRUPT COUNTER
+UINT8 turtle_counter, dive_counter;  // TURTLE ANIMATION COUNTER
+INT16 timer;                         // STAGE TIMER
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};        // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL};  // ROW 2 TURTLES
@@ -50,7 +52,7 @@ UINT8 text_buffer[5];  // MAX SCORE 9999 = {'9', '9', '9', '9', 0}; // if score 
 
 void update_score() {
     UINT8 vram_offset = 96;
-    vram_addr = get_bkg_xy_addr(0, 15);
+    vram_addr = get_bkg_xy_addr(0, 16);
 
     // if (score > 65535) {
     //     render_32bit_score(score, text_buffer);
@@ -73,15 +75,19 @@ void reset_frog() {
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 }
+void reset_timer() {
+    timer = -32;
+    set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
+}
 void init_level() {
     set_sprite_data(0, 4, frogger_tiles);
-    set_bkg_data(0, 36, BKG_TILES);
+    set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     turtles_diving = FALSE;
     score = 0;
     update_score();
-
+    reset_timer();
     reset_frog();
 }
 void move_frog() {  // MOVES THE FROG X OR Y 1 FRAME
@@ -354,6 +360,22 @@ void animate_turtles() {
     }
 }
 
+void stage_timer() {
+    UINT8 current_tile, tile_offset, x_offset;
+    tile_offset = (timer / 32) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
+    x_offset = timer / (32 * 8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
+    current_tile = get_bkg_tile_xy(6 + x_offset, 16);
+    if (timer >= 0 && timer % 32 == 0) {
+        if (current_tile == 0x25 + tile_offset) {
+            set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
+        }
+    }
+    if (timer++ == 2048) {  // 2048 + 1 because of function loop ordering
+        reset_timer();
+        reset_frog();
+    }
+}
+
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;
@@ -409,6 +431,8 @@ void main() {
                     break;
             }
         }
+        // --------------------STAGE TIMER -------------------------------//
+        stage_timer();
         // --------------------MOVE FROG -------------------------------//
         update_move_xy();
         // ---------------- SCROLL COUNTERS --------------------------- //

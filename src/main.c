@@ -5,9 +5,9 @@
 
 #include "scene.h"
 //------------GOALS-------------//
+// debugger
 // SCORE BOARD
 // TIMER + SCORE
-// debug
 // WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
@@ -53,7 +53,14 @@ UINT8 text_buffer[5];  // MAX SCORE 9999 = {'9', '9', '9', '9', 0}; // if score 
 
 void update_score() {
     UINT8 vram_offset = 96;
-    vram_addr = get_bkg_xy_addr(0, 16);
+    if (score < 100) {
+        vram_addr = get_bkg_xy_addr(3, 16);
+    } else if (score >= 100 && score < 1000) {
+        vram_addr = get_bkg_xy_addr(2, 16);
+    } else if (score >= 1000 && score < 10000) {
+        vram_addr = get_bkg_xy_addr(1, 16);
+    } else if (score > 10000)
+        vram_addr = get_bkg_xy_addr(0, 16);
 
     // if (score > 65535) {
     //     render_32bit_score(score, text_buffer);
@@ -85,6 +92,7 @@ void init_level() {
     set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
+    set_bkg_tile_xy(4, 16, 0x90);
     turtles_diving = FALSE;
     score = 0;
     update_score();
@@ -434,6 +442,9 @@ void main() {
                     break;
             }
         }
+        // // debug
+        // printf("%u ", timer);
+        // // debug
         // --------------------STAGE TIMER -------------------------------//
         stage_timer();
         // --------------------MOVE FROG -------------------------------//
@@ -450,6 +461,7 @@ void main() {
             // printf("%u\n", PLAYER.y);
             set_bkg_tile_xy(4, 4, 0x11);
         }
+
         wait_vbl_done();
         refresh_OAM();
     }

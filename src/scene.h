@@ -41,6 +41,10 @@
 #define LOG_TILES_END 0x17
 
 typedef enum {
+    game,
+    drain
+} gamestates_e;
+typedef enum {
     ON_NOTHING,
     ON_TURTLE,
     ON_LOG3,

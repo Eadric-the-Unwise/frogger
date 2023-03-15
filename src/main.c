@@ -265,6 +265,7 @@ void drain_timer() {
         GAMESTATE = game;
     }
 }
+
 void win_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
     UINT8 left_offset, right_offset;
@@ -282,23 +283,23 @@ void win_check(UINT8 frogx, UINT8 frogy) {
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01) {
         set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
         GAMESTATE = drain;
-        // reset_frog();
+        hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
         set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
         GAMESTATE = drain;
-        // reset_frog();
+        hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03) {
         set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
         GAMESTATE = drain;
-        // reset_frog();
+        hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04) {
         set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
         GAMESTATE = drain;
-        // reset_frog();
+        hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05) {
         set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
         GAMESTATE = drain;
-        // reset_frog();
+        hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else {
         reset_frog();  // WALL SPLAT, KILL FROG
     }

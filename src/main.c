@@ -7,6 +7,7 @@
 //------------GOALS-------------//
 // debugger
 // CAR MOVEMENT DURING DRAIN
+// DISPLAY TIME DURING DRAIN
 // WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
@@ -245,16 +246,16 @@ void scroll_counters() {
 void drain_timer() {
     UINT8 current_tile, tile_offset, x_offset;
 
-    if (timer != (UINT16)-2 && timer % 2 == 0) {
-        tile_offset = (timer_tick) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
-        x_offset = timer_tick / (8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
-        current_tile = get_bkg_tile_xy(6 + x_offset, 16);
+    // if (timer != (UINT16)-1 && timer % 1 == 0) {
+    tile_offset = (timer_tick) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
+    x_offset = timer_tick / (8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
+    current_tile = get_bkg_tile_xy(6 + x_offset, 16);
 
-        if (current_tile == 0x25 + tile_offset) {
-            set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
-        }
-        timer_tick++;
+    if (current_tile == 0x25 + tile_offset) {
+        set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
     }
+    timer_tick++;
+    // }
     score += 10;
     update_score();
     timer++;
@@ -501,10 +502,10 @@ void main() {
             if (joy & J_SELECT) {
                 reset_frog();
             }
-            if (joy & J_A) {
-                // printf("%u\n", PLAYER.y);
-                set_bkg_tile_xy(4, 4, 0x11);
-            }
+            // if (joy & J_A) {
+            //     // printf("%u\n", PLAYER.y);
+            //     set_bkg_tile_xy(4, 4, 0x11);
+            // }
 
             wait_vbl_done();
             refresh_OAM();

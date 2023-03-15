@@ -88,7 +88,7 @@ void update_score() {
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 56;  // 56
+    PLAYER.x = 32;  // 56
     PLAYER.y = 20;  // 108
     y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
@@ -281,23 +281,27 @@ void win_check(UINT8 frogx, UINT8 frogy) {
 
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01) {
         set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
-        drain_timer();
-        reset_frog();
+        GAMESTATE = drain;
+        // reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
         set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
-        reset_frog();
+        GAMESTATE = drain;
+        // reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03) {
         set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
-        reset_frog();
+        GAMESTATE = drain;
+        // reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04) {
         set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
-        reset_frog();
+        GAMESTATE = drain;
+        // reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05) {
         set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
-        reset_frog();
-    } else
-        reset_frog();
-    GAMESTATE = drain;
+        GAMESTATE = drain;
+        // reset_frog();
+    } else {
+        reset_frog();  // WALL SPLAT, KILL FROG
+    }
 }
 void collide_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY;
@@ -449,13 +453,13 @@ void main() {
     init_level();
 
     while (1) {
-        while (GAMESTATE == game) {
-            last_joy = joy;
-            joy = joypad();
-            // -------------------- COLLISION CHECK -------------------------------//
-            collide_check(PLAYER.x, PLAYER.y);
+        last_joy = joy;
+        joy = joypad();
+        // -------------------- COLLISION CHECK -------------------------------//
+        collide_check(PLAYER.x, PLAYER.y);
 
-            // -------------------- BUTTON INPUT -------------------------------//
+        // -------------------- BUTTON INPUT -------------------------------//
+        if (GAMESTATE == game) {  // REGULAR GAME TIME
             if (!is_moving) {
                 switch (joy) {
                     case J_LEFT:
@@ -486,34 +490,30 @@ void main() {
                         break;
                 }
             }
-            // // debug
-            // printf("%u ", timer);
-            // // debug
             // --------------------STAGE TIMER -------------------------------//
-            stage_timer();
-            // drain_timer();
-            // --------------------MOVE FROG -------------------------------//
-            update_move_xy();
-            // ---------------- SCROLL COUNTERS --------------------------- //
-            scroll_counters();
-            // ---------------- ANIMATE TURTLES --------------------------- //
-            animate_turtles();
-            // -------------------- DEBUG -------------------------------//
-            if (joy & J_SELECT) {
-                reset_frog();
-            }
-            // if (joy & J_A) {
-            //     // printf("%u\n", PLAYER.y);
-            //     set_bkg_tile_xy(4, 4, 0x11);
-            // }
+            stage_timer();  // REGULAR TIMER
+        } else              // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
+            drain_timer();  // DRAIN TIMER // HIGH SPEED
 
-            wait_vbl_done();
-            refresh_OAM();
+        // --------------------MOVE FROG -------------------------------//
+        update_move_xy();
+        // ---------------- SCROLL COUNTERS --------------------------- //
+        scroll_counters();
+        // ---------------- ANIMATE TURTLES --------------------------- //
+        animate_turtles();
+        // -------------------- DEBUG -------------------------------//
+        if (joy & J_SELECT) {
+            reset_frog();
         }
-        while (GAMESTATE == drain) {
-            drain_timer();
-            wait_vbl_done();
-            refresh_OAM();
-        }
+        // debug
+        // printf("%u ", timer);
+        // // debug
+        // if (joy & J_A) {
+        //     // printf("%u\n", PLAYER.y);
+        //     set_bkg_tile_xy(4, 4, 0x11);
+        // }
+
+        wait_vbl_done();
+        refresh_OAM();
     }
 }

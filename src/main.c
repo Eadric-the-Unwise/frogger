@@ -6,8 +6,7 @@
 #include "scene.h"
 //------------GOALS-------------//
 // debugger
-// SCORE BOARD
-// TIMER + SCORE
+// CAR MOVEMENT DURING DRAIN
 // WIN SCREEN
 // 1 UP SYSTEM
 // GAME OVER
@@ -20,7 +19,9 @@ UBYTE is_moving, turtles_diving;     // IS MOVING = LOCKS JOY WHILE FROG IS ANIM
 INT8 move_x, move_y;                 // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
 UINT8 scx_counter;                   // VBLANK INTERRUPT COUNTER
 UINT8 turtle_counter, dive_counter;  // TURTLE ANIMATION COUNTER
-UINT16 timer;                        // STAGE TIMER
+UINT16 timer;
+UINT8 timer_tick;  // STAGE TIMER
+UBYTE GAMESTATE;
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};        // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL};  // ROW 2 TURTLES
@@ -86,8 +87,8 @@ void update_score() {
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 56;   // 56
-    PLAYER.y = 108;  // 108
+    PLAYER.x = 56;  // 56
+    PLAYER.y = 20;  // 108
     y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
     move_metasprite(
@@ -95,6 +96,7 @@ void reset_frog() {
 }
 void reset_timer() {
     timer = (UINT16)-32;  // converts -32 to equivilent Unsigned value
+    timer_tick = 0;
     set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
 }
 void init_level() {
@@ -240,6 +242,28 @@ void scroll_counters() {
 
     scx_counter++;
 }
+void drain_timer() {
+    UINT8 current_tile, tile_offset, x_offset;
+
+    if (timer != (UINT16)-2 && timer % 2 == 0) {
+        tile_offset = (timer_tick) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
+        x_offset = timer_tick / (8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
+        current_tile = get_bkg_tile_xy(6 + x_offset, 16);
+
+        if (current_tile == 0x25 + tile_offset) {
+            set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
+        }
+        timer_tick++;
+    }
+    score += 10;
+    update_score();
+    timer++;
+    if (timer_tick == 64) {  // TIMER ENDS // 2048 + 1 because of function loop ordering
+        reset_timer();
+        reset_frog();
+        GAMESTATE = game;
+    }
+}
 void win_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
     UINT8 left_offset, right_offset;
@@ -256,6 +280,7 @@ void win_check(UINT8 frogx, UINT8 frogy) {
 
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01) {
         set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
+        drain_timer();
         reset_frog();
     } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
         set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
@@ -271,6 +296,7 @@ void win_check(UINT8 frogx, UINT8 frogy) {
         reset_frog();
     } else
         reset_frog();
+    GAMESTATE = drain;
 }
 void collide_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY;
@@ -392,8 +418,10 @@ void stage_timer() {
         if (current_tile == 0x25 + tile_offset) {
             set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
         }
+        timer_tick++;  // 64 ticks = DRAINED TIMER
     }
-    if (timer++ == 2048) {  // 2048 + 1 because of function loop ordering
+    timer++;
+    if (timer_tick == 64) {  // TIMER ENDS // 2048 + 1 because of function loop ordering
         reset_timer();
         reset_frog();
     }
@@ -415,66 +443,76 @@ void main() {
     SHOW_SPRITES;
     DISPLAY_ON;
 
+    GAMESTATE = game;
+
     init_level();
 
     while (1) {
-        last_joy = joy;
-        joy = joypad();
-        // -------------------- COLLISION CHECK -------------------------------//
-        collide_check(PLAYER.x, PLAYER.y);
+        while (GAMESTATE == game) {
+            last_joy = joy;
+            joy = joypad();
+            // -------------------- COLLISION CHECK -------------------------------//
+            collide_check(PLAYER.x, PLAYER.y);
 
-        // -------------------- BUTTON INPUT -------------------------------//
-        if (!is_moving) {
-            switch (joy) {
-                case J_LEFT:
-                    if (CHANGED_BUTTONS & J_LEFT) {
-                        is_moving = TRUE;
-                        move_x = -12;
-                    }
-                    break;
-                case J_RIGHT:
-                    if (CHANGED_BUTTONS & J_RIGHT) {
-                        is_moving = TRUE;
-                        move_x = 12;
-                    }
-                    break;
-                case J_UP:
-                    if (CHANGED_BUTTONS & J_UP) {
-                        is_moving = TRUE;
-                        move_y = -8;
-                        PLAYER.position = ON_NOTHING;
-                    }
-                    break;
-                case J_DOWN:
-                    if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN)) {  // PREVENT FROG FROM GOING BELOW SPAWN POINT
-                        is_moving = TRUE;
-                        move_y = 8;
-                        PLAYER.position = ON_NOTHING;
-                    }
-                    break;
+            // -------------------- BUTTON INPUT -------------------------------//
+            if (!is_moving) {
+                switch (joy) {
+                    case J_LEFT:
+                        if (CHANGED_BUTTONS & J_LEFT) {
+                            is_moving = TRUE;
+                            move_x = -12;
+                        }
+                        break;
+                    case J_RIGHT:
+                        if (CHANGED_BUTTONS & J_RIGHT) {
+                            is_moving = TRUE;
+                            move_x = 12;
+                        }
+                        break;
+                    case J_UP:
+                        if (CHANGED_BUTTONS & J_UP) {
+                            is_moving = TRUE;
+                            move_y = -8;
+                            PLAYER.position = ON_NOTHING;
+                        }
+                        break;
+                    case J_DOWN:
+                        if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN)) {  // PREVENT FROG FROM GOING BELOW SPAWN POINT
+                            is_moving = TRUE;
+                            move_y = 8;
+                            PLAYER.position = ON_NOTHING;
+                        }
+                        break;
+                }
             }
-        }
-        // // debug
-        // printf("%u ", timer);
-        // // debug
-        // --------------------STAGE TIMER -------------------------------//
-        stage_timer();
-        // --------------------MOVE FROG -------------------------------//
-        update_move_xy();
-        // ---------------- SCROLL COUNTERS --------------------------- //
-        scroll_counters();
-        // ---------------- ANIMATE TURTLES --------------------------- //
-        animate_turtles();
-        // -------------------- DEBUG -------------------------------//
-        if (joy & J_SELECT) {
-            reset_frog();
-        }
-        if (joy & J_A) {
-            // printf("%u\n", PLAYER.y);
-            set_bkg_tile_xy(4, 4, 0x11);
-        }
+            // // debug
+            // printf("%u ", timer);
+            // // debug
+            // --------------------STAGE TIMER -------------------------------//
+            stage_timer();
+            // drain_timer();
+            // --------------------MOVE FROG -------------------------------//
+            update_move_xy();
+            // ---------------- SCROLL COUNTERS --------------------------- //
+            scroll_counters();
+            // ---------------- ANIMATE TURTLES --------------------------- //
+            animate_turtles();
+            // -------------------- DEBUG -------------------------------//
+            if (joy & J_SELECT) {
+                reset_frog();
+            }
+            if (joy & J_A) {
+                // printf("%u\n", PLAYER.y);
+                set_bkg_tile_xy(4, 4, 0x11);
+            }
 
-        wait_vbl_done();
-        refresh_OAM();
+            wait_vbl_done();
+            refresh_OAM();
+        }
+        while (GAMESTATE == drain) {
+            drain_timer();
+            wait_vbl_done();
+            refresh_OAM();
+        }
     }
 }

@@ -14,6 +14,8 @@
 // CGB PALLETES
 // SOUND
 // STAGE 2
+
+// pc to laptop testing //
 GameCharacter PLAYER;  // FROG
 UINT8 joy, last_joy;
 UBYTE is_moving, turtles_diving;     // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION

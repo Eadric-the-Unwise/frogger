@@ -10,6 +10,7 @@
 #include "../res/tiles/frogger_16.h"
 #include "../res/tiles/reset_timer.h"
 #include "../res/tiles/win_frog.h"
+#include "../res/tiles/frog_lives.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
 
@@ -40,11 +41,14 @@
 #define LOG_TILES_START 0x15
 #define LOG_TILES_END 0x17
 
-typedef enum {
+typedef enum
+{
     game,
-    drain
+    drain,
+    gameover
 } gamestates_e;
-typedef enum {
+typedef enum
+{
     ON_NOTHING,
     ON_TURTLE,
     ON_LOG3,
@@ -52,14 +56,15 @@ typedef enum {
     ON_LOG1
 } position_e;
 
-typedef struct GameCharacter {
+typedef struct GameCharacter
+{
     UBYTE spawn;
     INT16 x;
     INT16 y;
     position_e position;
 } GameCharacter;
 
-UINT8 scroll[10];  // VALUES THE AMOUNT IT HAS SCROLLED
+UINT8 scroll[10]; // VALUES THE AMOUNT IT HAS SCROLLED
 
 #define SCROLL_LOG1 scroll[0]
 #define SCROLL_TURTLE1 scroll[1]

@@ -3,6 +3,7 @@
         "stdio.h": "c",
         "scene.h": "c",
         "type_traits": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "win_frog.h": "c"
     }
 }

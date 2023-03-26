@@ -38,6 +38,7 @@ UINT8 y_min;
 
 uint8_t *vram_addr;
 
+UINT8 lives = 4;
 // UINT32 score = 87654321; //USE THIS IF HIGHER THAN 65535
 UINT16 score;
 UINT8 score_buffer[5]; // MAX SCORE 9999 = {'9', '9', '9', '9', 0}; // if score = 150, score_buffer[0] = '1',score_buffer[1] = '5', score_buffer[2] = '0', score_buffer[3] = 0
@@ -100,16 +101,42 @@ void update_score()
         vram_addr++;
     }
 }
+void update_frog_lives()
+{
+    UINT8 frog_life_pos_x = 0;
+    for (UINT8 i = lives; i != 0; i--)
+    {
+        set_bkg_tile_xy(frog_life_pos_x, 17, 47); // fill frog lives
+        frog_life_pos_x++;
+    }
+    set_bkg_tile_xy(lives, 17, 0x00); // set blank tile for frog life loss
+}
 void reset_frog()
 {
+    update_frog_lives();
     is_moving = FALSE;
     move_x = move_y = 0;
     PLAYER.x = 56;  // 56
     PLAYER.y = 108; // 108
     y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
+
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+}
+void kill_frog()
+{
+    // animate frog death here//
+    if (lives != 0)
+    {
+        lives -= 1;
+    }
+    else // GAME OVER
+    {
+        GAMESTATE = gameover;
+        return;
+    }
+    reset_frog();
 }
 void reset_timer()
 {
@@ -117,13 +144,15 @@ void reset_timer()
     timer_tick = 0;
     set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
 }
+
 void init_level()
 {
     set_sprite_data(0, 4, frogger_tiles);
     set_bkg_data(0, 47, BKG_TILES);
+    set_bkg_data(47, 1, FROG_LIVES); // TESTING FROG LIFE UPDATE
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
-    set_bkg_tile_xy(4, 16, 0x90);
+    set_bkg_tile_xy(4, 16, 0x90); // set furthest '0' on the righthand side of score on Stage 1 init only (is updated as soon as player gains points)
     turtles_diving = FALSE;
     score = 0;
     update_score();
@@ -132,6 +161,7 @@ void init_level()
     reset_timer();
     reset_frog();
     update_player1_player2();
+    update_frog_lives();
 }
 void move_frog()
 { // MOVES THE FROG X OR Y 1 FRAME
@@ -353,7 +383,7 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else
     {
-        reset_frog(); // WALL SPLAT, KILL FROG
+        kill_frog(); // WALL SPLAT, KILL FROG
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy)
@@ -387,7 +417,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     { // ON OR BELOW THE SIDEWALK
         if ((left_tile >= CAR_TILES_START && left_tile <= CAR_TILES_END) || (right_tile >= CAR_TILES_START && right_tile <= CAR_TILES_END))
         { // CHECK FOR ALL CAR TILE COLLISIONS
-            reset_frog();
+            kill_frog();
         }
     }
     else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2)
@@ -399,7 +429,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                reset_frog();
+                kill_frog();
         }
     }
     else if (PLAYER.y == LOG1)
@@ -411,7 +441,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                reset_frog();
+                kill_frog();
         }
     }
     else if (PLAYER.y == LOG2)
@@ -423,7 +453,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                reset_frog();
+                kill_frog();
         }
     }
     else if (PLAYER.y == LOG3)
@@ -435,7 +465,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                reset_frog();
+                kill_frog();
         }
     }
     else if (PLAYER.y == WIN)
@@ -528,7 +558,7 @@ void stage_timer()
     if (timer_tick == 64)
     { // TIMER ENDS // 2048 + 1 because of function loop ordering
         reset_timer();
-        reset_frog();
+        kill_frog();
     }
 }
 
@@ -603,8 +633,12 @@ void main()
             // --------------------STAGE TIMER -------------------------------//
             stage_timer(); // REGULAR TIMER
         }
-        else               // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
-            drain_timer(); // DRAIN TIMER // HIGH SPEED
+        else if (GAMESTATE == drain) // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
+            drain_timer();           // DRAIN TIMER // HIGH SPEED
+        else if (GAMESTATE == gameover)
+        {
+            return;
+        }
 
         // --------------------MOVE FROG -------------------------------//
         update_move_xy();

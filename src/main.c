@@ -88,8 +88,8 @@ void update_score() {
 void reset_frog() {
     is_moving = FALSE;
     move_x = move_y = 0;
-    PLAYER.x = 32;  // 56
-    PLAYER.y = 20;  // 108
+    PLAYER.x = 56;   // 56
+    PLAYER.y = 108;  // 108
     y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
     move_metasprite(
@@ -243,10 +243,9 @@ void scroll_counters() {
 
     scx_counter++;
 }
-void drain_timer() {
+void drain_timer() {  // WHEN PLAYER REACHES TOP, DRAIN THE REMAINING TIMER
     UINT8 current_tile, tile_offset, x_offset;
 
-    // if (timer != (UINT16)-1 && timer % 1 == 0) {
     tile_offset = (timer_tick) % 8;  // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
     x_offset = timer_tick / (8);     // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
     current_tile = get_bkg_tile_xy(6 + x_offset, 16);
@@ -255,7 +254,6 @@ void drain_timer() {
         set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
     }
     timer_tick++;
-    // }
     score += 10;
     update_score();
     timer++;
@@ -265,7 +263,6 @@ void drain_timer() {
         GAMESTATE = game;
     }
 }
-
 void win_check(UINT8 frogx, UINT8 frogy) {
     UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
     UINT8 left_offset, right_offset;

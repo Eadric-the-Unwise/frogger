@@ -1,8 +1,8 @@
 /*
 
- BKG_TILES.H
+ FROG_LIVES.C
 
- Include File.
+ Tile Source File.
 
  Info:
   Form                 : All tiles as one unit.
@@ -10,7 +10,7 @@
   Compression          : None.
   Counter              : None.
   Tile size            : 8 x 8
-  Tiles                : 0 to 46
+  Tiles                : 0 to 0
 
   Palette colors       : None.
   SGB Palette          : None.
@@ -22,14 +22,11 @@
 
 */
 
-#ifndef __bkg_tiles_h_INCLUDE
-#define __bkg_tiles_h_INCLUDE
-
-/* Bank of tiles. */
-#define BKG_TILESBank 0
 /* Start of tile array. */
-extern const unsigned char BKG_TILES[];
+const unsigned char FROG_LIVES[] =
+{
+  0x00,0x00,0x5D,0x5D,0x7F,0x3E,0x1C,0x1C,
+  0x3E,0x1C,0x36,0x36,0x14,0x14,0x77,0x63
+};
 
-#endif
-
-/* End of BKG_TILES.H */
+/* End of FROG_LIVES.C */

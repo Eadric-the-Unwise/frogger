@@ -1,6 +1,6 @@
 /*
 
- BKG_TILES.H
+ FONT.H
 
  Include File.
 
@@ -8,9 +8,9 @@
   Form                 : All tiles as one unit.
   Format               : Gameboy 4 color.
   Compression          : None.
-  Counter              : None.
+  Counter              : Tile-count as Constant.
   Tile size            : 8 x 8
-  Tiles                : 0 to 46
+  Tiles                : 0 to 67
 
   Palette colors       : None.
   SGB Palette          : None.
@@ -22,14 +22,15 @@
 
 */
 
-#ifndef __bkg_tiles_h_INCLUDE
-#define __bkg_tiles_h_INCLUDE
+#ifndef __font_h_INCLUDE
+#define __font_h_INCLUDE
 
 /* Bank of tiles. */
-#define BKG_TILESBank 0
+#define FONTBank 0
 /* Start of tile array. */
-extern const unsigned char BKG_TILES[];
+extern const unsigned char FONT[];
+#define FONTLen 68
 
 #endif
 
-/* End of BKG_TILES.H */
+/* End of FONT.H */

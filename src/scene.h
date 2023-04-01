@@ -56,12 +56,21 @@ typedef enum
     ON_LOG1
 } position_e;
 
+typedef enum
+{
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+} direction_e;
+
 typedef struct GameCharacter
 {
     UBYTE spawn;
     INT16 x;
     INT16 y;
     position_e position;
+    direction_e direction;
 } GameCharacter;
 
 UINT8 scroll[10]; // VALUES THE AMOUNT IT HAS SCROLLED

@@ -6,10 +6,7 @@
 #include "scene.h"
 //------------GOALS-------------//
 // debugger
-// CAR MOVEMENT DURING DRAIN
-// DISPLAY TIME DURING DRAIN
 // WIN SCREEN
-// 1 UP SYSTEM
 // GAME OVER
 // CGB PALLETES
 // SOUND
@@ -19,10 +16,10 @@
 // laptop to pc testing //
 GameCharacter PLAYER; // FROG
 UINT8 joy, last_joy;
-UBYTE is_moving, turtles_diving;    // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION
-INT8 move_x, move_y;                // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
-UINT8 scx_counter;                  // VBLANK INTERRUPT COUNTER
-UINT8 turtle_counter, dive_counter; // TURTLE ANIMATION COUNTER
+UBYTE is_moving, turtles_diving, is_animating; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION
+INT8 move_x, move_y;                           // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
+UINT8 scx_counter;                             // VBLANK INTERRUPT COUNTER
+UINT8 turtle_counter, dive_counter;            // TURTLE ANIMATION COUNTER
 UINT16 timer;
 UINT8 timer_tick; // STAGE TIMER
 UBYTE GAMESTATE;
@@ -51,6 +48,25 @@ UINT8 current_level;
 UINT16 level_buffer[12];
 
 // DISPLAY LEVEL 1, LEVEL 2, LEVEL 3 AT BOTTOM
+UINT8 animation_timer;
+UINT8 animation_phase;
+
+void render_animations()
+{
+
+    if (animation_timer % 2 == 0)
+    {
+        // move_metasprite(frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        animation_phase++;
+        if (frogger_up_down_animation[animation_phase] == NULL)
+        {
+            animation_phase = 0;
+            move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            is_animating = FALSE;
+        }
+    }
+    animation_timer++;
+}
 
 void update_level()
 {
@@ -147,7 +163,7 @@ void reset_timer()
 
 void init_level()
 {
-    set_sprite_data(0, 4, frogger_tiles);
+    set_sprite_data(0, 24, frogger_tiles);
     set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(47, 1, FROG_LIVES); // TESTING FROG LIFE UPDATE
     set_bkg_data(0x80, 68, FONT);
@@ -164,19 +180,19 @@ void init_level()
     update_frog_lives();
 }
 void move_frog()
-{ // MOVES THE FROG X OR Y 1 FRAME
+{
     // (MOVE_X AND MOVE_Y ARE UPDATED IN update_move_xy)
-    if (move_x != 0)
+    if (move_x != 0) // MOVES THE FROG + or - X FOR 1 FRAME
     {
         PLAYER.x += (move_x < 0 ? -1 : 1);
         move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
     }
-    else if (move_y != 0)
+    else if (move_y != 0) // MOVES THE FROG + or - Y FOR 1 FRAME
     {
         PLAYER.y += (move_y < 0 ? -1 : 1);
         move_metasprite(
-            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
     }
 }
 void update_move_xy()
@@ -602,6 +618,7 @@ void main()
                     if (CHANGED_BUTTONS & J_LEFT)
                     {
                         is_moving = TRUE;
+                        is_animating = TRUE;
                         move_x = -12;
                     }
                     break;
@@ -609,6 +626,7 @@ void main()
                     if (CHANGED_BUTTONS & J_RIGHT)
                     {
                         is_moving = TRUE;
+                        is_animating = TRUE;
                         move_x = 12;
                     }
                     break;
@@ -616,6 +634,7 @@ void main()
                     if (CHANGED_BUTTONS & J_UP)
                     {
                         is_moving = TRUE;
+                        is_animating = TRUE;
                         move_y = -8;
                         PLAYER.position = ON_NOTHING;
                     }
@@ -624,6 +643,7 @@ void main()
                     if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN))
                     { // PREVENT FROG FROM GOING BELOW SPAWN POINT
                         is_moving = TRUE;
+                        is_animating = TRUE;
                         move_y = 8;
                         PLAYER.position = ON_NOTHING;
                     }
@@ -644,6 +664,9 @@ void main()
         update_move_xy();
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
+        // ---------------- ANIMATE FROG --------------------------- //
+        if (is_animating)
+            render_animations();
         // ---------------- ANIMATE TURTLES --------------------------- //
         animate_turtles();
         // -------------------- DEBUG -------------------------------//

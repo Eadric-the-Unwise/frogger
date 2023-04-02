@@ -11,15 +11,15 @@
 // CGB PALLETES
 // SOUND
 // STAGE 2
-GameCharacter PLAYER; // FROG
-UINT8 joy, last_joy;
-UBYTE is_moving, turtles_diving, is_animating; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION
-INT8 move_x, move_y;                           // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP
+GameCharacter PLAYER;                          // FROG
+UINT8 joy, last_joy;                           // CHECKS FOR CURRENT AND PREVIOUS JOY INPUTS IN MAIN WHILE()
+UBYTE is_moving, turtles_diving, is_animating; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION // IS ANIMATION = ANIMATES FROG UNTIL ANIMATION REACHES ITS END
+INT8 move_x, move_y;                           // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
 UINT8 scx_counter;                             // VBLANK INTERRUPT COUNTER
 UINT8 turtle_counter, dive_counter;            // TURTLE ANIMATION COUNTER
-UINT16 timer;
-UINT8 timer_tick; // STAGE TIMER
-UBYTE GAMESTATE;
+UINT16 timer;                                  // STAGE TIMER
+UINT8 timer_tick;                              // TIMER TICK (8 TICKS PER TIMER BAR TILE)
+UBYTE GAMESTATE;                               // GAME, DRAIN (TIMER), GAMEOVER
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};       // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL}; // ROW 2 TURTLES
@@ -69,7 +69,6 @@ void render_animations()
     }
     animation_timer++;
 }
-
 void update_level()
 {
     vram_addr = get_bkg_xy_addr(7, 17);
@@ -526,9 +525,9 @@ void collide_check(UINT8 frogx, UINT8 frogy)
 }
 void animate_turtles()
 {
-    turtle_counter++; // REGULAR TURTLES ANIMATION TIMER
-    dive_counter++;   // DIVING TURTLES ANIMATION TIMER
-    UINT8 row1, row2;
+    turtle_counter++;           // REGULAR TURTLES ANIMATION TIMER
+    dive_counter++;             // DIVING TURTLES ANIMATION TIMER
+    UINT8 row1, row2;           //
     UINT8 regular_frame = NULL; // REGULAR TURTLE ANIMATION LOOP FRAMES
 
     // -------------------------- REGULAR TURTLES -------------------------- //
@@ -537,9 +536,9 @@ void animate_turtles()
         regular_frame = turtle_tiles[turtle_tile_index++ % 4]; // TURTLE TILE FRAME OF ANIMATION (1 % 4 = 1) ++ modifies the turtle_tile_index variable each loop
         for (UINT8 i = 0; i < 32; i++)
         {
-            row1 = get_bkg_tile_xy(i, 4); // TURTLES1 ROW
-            row2 = get_bkg_tile_xy(i, 7); // TURTLES2 ROW
-            if (row1 >= TURTLE_TILES_START && row1 <= TURTLE_TILES_END)
+            row1 = get_bkg_tile_xy(i, 4);                               // TURTLES1 ROW
+            row2 = get_bkg_tile_xy(i, 7);                               // TURTLES2 ROW
+            if (row1 >= TURTLE_TILES_START && row1 <= TURTLE_TILES_END) // IF TILES ARE AMONG THE 'REGULAR' TURTLES, UPDATE THEIR ANIMATION VIA regular frame (turtle_tile_index)
             {
                 set_bkg_tile_xy(i, 4, regular_frame); // TURTLES1 ROW
             }

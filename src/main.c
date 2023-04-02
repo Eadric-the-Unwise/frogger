@@ -48,7 +48,7 @@ UINT8 current_level;
 UINT16 level_buffer[12];
 
 // DISPLAY LEVEL 1, LEVEL 2, LEVEL 3 AT BOTTOM
-UINT8 animation_timer;
+UINT8 animation_timer = 1;
 UINT8 animation_phase;
 
 void render_animations()
@@ -60,8 +60,13 @@ void render_animations()
         animation_phase++;
         if (frogger_up_down_animation[animation_phase] == NULL)
         {
+            if (PLAYER.direction == DOWN)
+                move_metasprite_hflip(
+                    frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y + 48);
+            else if (PLAYER.direction == UP)
+                move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+
             animation_phase = 0;
-            move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
             is_animating = FALSE;
         }
     }
@@ -136,6 +141,7 @@ void reset_frog()
     PLAYER.y = 108; // 108
     y_min = PLAYER.y;
     PLAYER.position = ON_NOTHING;
+    PLAYER.direction = UP;
 
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
@@ -185,14 +191,25 @@ void move_frog()
     if (move_x != 0) // MOVES THE FROG + or - X FOR 1 FRAME
     {
         PLAYER.x += (move_x < 0 ? -1 : 1);
+        // if (PLAYER.direction == LEFT)
         move_metasprite(
             frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        // else if (PLAYER.direction == RIGHT)
+        // move_metasprite_hflip(
+        //     frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
     }
     else if (move_y != 0) // MOVES THE FROG + or - Y FOR 1 FRAME
     {
         PLAYER.y += (move_y < 0 ? -1 : 1);
-        move_metasprite(
-            frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        if (PLAYER.direction == UP)
+            move_metasprite(
+                frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        else if (PLAYER.direction == DOWN)
+            move_metasprite_hflip(
+                frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y + 48);
+        // else if (PLAYER.direction == DOWN)
+        //     move_metasprite_vflip(
+        //         frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
     }
 }
 void update_move_xy()
@@ -620,6 +637,7 @@ void main()
                         is_moving = TRUE;
                         is_animating = TRUE;
                         move_x = -12;
+                        PLAYER.direction = LEFT;
                     }
                     break;
                 case J_RIGHT:
@@ -628,6 +646,7 @@ void main()
                         is_moving = TRUE;
                         is_animating = TRUE;
                         move_x = 12;
+                        PLAYER.direction = RIGHT;
                     }
                     break;
                 case J_UP:
@@ -637,6 +656,7 @@ void main()
                         is_animating = TRUE;
                         move_y = -8;
                         PLAYER.position = ON_NOTHING;
+                        PLAYER.direction = UP;
                     }
                     break;
                 case J_DOWN:
@@ -646,6 +666,7 @@ void main()
                         is_animating = TRUE;
                         move_y = 8;
                         PLAYER.position = ON_NOTHING;
+                        PLAYER.direction = DOWN;
                     }
                     break;
                 }

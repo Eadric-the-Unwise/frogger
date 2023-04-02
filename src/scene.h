@@ -41,6 +41,9 @@
 #define LOG_TILES_START 0x15
 #define LOG_TILES_END 0x17
 
+#define HFLIP_OFFSET 48
+#define VFLIP_OFFSET 32
+
 typedef enum
 {
     game,

@@ -11,9 +11,6 @@
 // CGB PALLETES
 // SOUND
 // STAGE 2
-
-// pc to laptop testing //
-// laptop to pc testing //
 GameCharacter PLAYER; // FROG
 UINT8 joy, last_joy;
 UBYTE is_moving, turtles_diving, is_animating; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION
@@ -132,6 +129,29 @@ void update_frog_lives()
     }
     set_bkg_tile_xy(lives, 17, 0x00); // set blank tile for frog life loss
 }
+void update_frog_direction()
+{ // UPDATES THE FROG'S POSITION WHEN ON TURTLES AND LOGS
+    switch (PLAYER.direction)
+    {
+
+    case UP:
+        move_metasprite(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y); // UP IDLE POSITION
+        break;
+    case DOWN:
+        move_metasprite_hflip(
+            frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y + HFLIP_OFFSET); // DOWN IDLE POSITION
+        break;
+    case RIGHT:
+        move_metasprite(
+            frogger_metasprites[3], 0, 0, PLAYER.x, PLAYER.y); // RIGHT IDLE POSITION
+        break;
+    case LEFT:
+        move_metasprite_vflip(
+            frogger_metasprites[3], 0, 0, PLAYER.x + VFLIP_OFFSET, PLAYER.y); // LEFT IDLE POSITION
+        break;
+    }
+}
 void reset_frog()
 {
     update_frog_lives();
@@ -191,12 +211,17 @@ void move_frog()
     if (move_x != 0) // MOVES THE FROG + or - X FOR 1 FRAME
     {
         PLAYER.x += (move_x < 0 ? -1 : 1);
-        // if (PLAYER.direction == LEFT)
-        move_metasprite(
-            frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
-        // else if (PLAYER.direction == RIGHT)
-        // move_metasprite_hflip(
-        //     frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+
+        if (PLAYER.direction == RIGHT)
+        {
+            move_metasprite(
+                frogger_left_right_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        }
+        else if (PLAYER.direction == LEFT)
+        {
+            move_metasprite_vflip(
+                frogger_left_right_animation[animation_phase], 0, 0, PLAYER.x + VFLIP_OFFSET, PLAYER.y); // OFFSET DUE TO PNG2ASSET.BAT OFFSET ERROR WHEN FLIPPED
+        }
     }
     else if (move_y != 0) // MOVES THE FROG + or - Y FOR 1 FRAME
     {
@@ -206,10 +231,7 @@ void move_frog()
                 frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
         else if (PLAYER.direction == DOWN)
             move_metasprite_hflip(
-                frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y + 48);
-        // else if (PLAYER.direction == DOWN)
-        //     move_metasprite_vflip(
-        //         frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+                frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y + HFLIP_OFFSET); // OFFSET DUE TO PNG2ASSET.BAT OFFSET ERROR WHEN FLIPPED
     }
 }
 void update_move_xy()
@@ -304,14 +326,12 @@ void scroll_counters()
         if (PLAYER.position == ON_TURTLE)
         {
             PLAYER.x -= 1;
-            move_metasprite(
-                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            update_frog_direction(); // UPDATES THE FROG'S POSITION WHEN ON TURTLES AND LOGS
         }
         if (PLAYER.position == ON_LOG1)
         {
             PLAYER.x += 1;
-            move_metasprite(
-                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            update_frog_direction();
         }
     }
     if (scx_counter % 5 == 0)
@@ -320,8 +340,7 @@ void scroll_counters()
         if (PLAYER.position == ON_LOG3)
         {
             PLAYER.x += 1;
-            move_metasprite(
-                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            update_frog_direction();
         }
     }
     if (scx_counter % 4 == 0)
@@ -333,8 +352,7 @@ void scroll_counters()
         if (PLAYER.position == ON_LOG2)
         {
             PLAYER.x += 1;
-            move_metasprite(
-                frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            update_frog_direction();
         }
     }
 

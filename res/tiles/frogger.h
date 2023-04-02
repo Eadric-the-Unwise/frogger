@@ -23,5 +23,5 @@ extern const uint8_t frogger_tiles[384];
 
 extern const metasprite_t *const frogger_metasprites[6];
 extern const metasprite_t *const frogger_up_down_animation[];
-
+extern const metasprite_t *const frogger_left_right_animation[];
 #endif

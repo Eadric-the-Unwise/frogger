@@ -48,3 +48,6 @@ const metasprite_t *const frogger_metasprites[6] = {
 
 const metasprite_t *const frogger_up_down_animation[] = {
 	frogger_metasprite0, frogger_metasprite1, frogger_metasprite2, frogger_metasprite2, NULL};
+
+const metasprite_t *const frogger_left_right_animation[] = {
+	frogger_metasprite3, frogger_metasprite4, frogger_metasprite5, frogger_metasprite5, NULL};

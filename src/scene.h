@@ -11,6 +11,7 @@
 #include "../res/tiles/reset_timer.h"
 #include "../res/tiles/win_frog.h"
 #include "../res/tiles/frog_lives.h"
+#include "../res/tiles/tophat_frog.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
 

@@ -10,7 +10,7 @@
 #define frogger_TILE_H 16
 #define frogger_WIDTH 16
 #define frogger_HEIGHT 16
-#define frogger_TILE_COUNT 24
+#define frogger_TILE_COUNT 36
 #define frogger_PIVOT_X -8
 #define frogger_PIVOT_Y -16
 #define frogger_PIVOT_W 16
@@ -19,9 +19,11 @@
 BANKREF_EXTERN(frogger)
 
 extern const palette_color_t frogger_palettes[5];
-extern const uint8_t frogger_tiles[384];
+extern const uint8_t frogger_tiles[576];
 
-extern const metasprite_t *const frogger_metasprites[6];
+extern const metasprite_t *const frogger_metasprites[9];
 extern const metasprite_t *const frogger_up_down_animation[];
+
 extern const metasprite_t *const frogger_left_right_animation[];
+extern const metasprite_t *const frogger_death_animation[];
 #endif

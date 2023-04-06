@@ -5,21 +5,22 @@
 
 #include "scene.h"
 //------------GOALS-------------//
+// better solution for is_dying?
 // debugger
 // WIN SCREEN
 // GAME OVER
 // CGB PALLETES
 // SOUND
 // STAGE 2
-GameCharacter PLAYER;                          // FROG
-UINT8 joy, last_joy;                           // CHECKS FOR CURRENT AND PREVIOUS JOY INPUTS IN MAIN WHILE()
-UBYTE is_moving, turtles_diving, is_animating; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION // IS ANIMATION = ANIMATES FROG UNTIL ANIMATION REACHES ITS END
-INT8 move_x, move_y;                           // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
-UINT8 scx_counter;                             // VBLANK INTERRUPT COUNTER
-UINT8 turtle_counter, dive_counter;            // TURTLE ANIMATION COUNTER
-UINT16 timer;                                  // STAGE TIMER
-UINT8 timer_tick;                              // TIMER TICK (8 TICKS PER TIMER BAR TILE)
-UBYTE GAMESTATE;                               // GAME, DRAIN (TIMER), GAMEOVER
+GameCharacter PLAYER;                                    // FROG
+UINT8 joy, last_joy;                                     // CHECKS FOR CURRENT AND PREVIOUS JOY INPUTS IN MAIN WHILE()
+UBYTE is_moving, is_animating, is_dying, turtles_diving; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION // IS ANIMATION = ANIMATES FROG UNTIL ANIMATION REACHES ITS END
+INT8 move_x, move_y;                                     // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
+UINT8 scx_counter;                                       // VBLANK INTERRUPT COUNTER
+UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COUNTER
+UINT16 timer;                                            // STAGE TIMER
+UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
+UBYTE GAMESTATE;                                         // GAME, DRAIN (TIMER), GAMEOVER
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};       // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL}; // ROW 2 TURTLES
@@ -45,13 +46,14 @@ UINT8 current_level;
 UINT16 level_buffer[12];
 
 // DISPLAY LEVEL 1, LEVEL 2, LEVEL 3 AT BOTTOM
-UINT8 animation_timer = 1;
+UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
+UINT8 death_animation_phase;
 
 void render_animations()
 {
 
-    if (animation_timer % 2 == 0)
+    // if (animation_timer % 1 == 0)
     {
         // move_metasprite(frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y);
         animation_phase++;
@@ -67,7 +69,7 @@ void render_animations()
             is_animating = FALSE;
         }
     }
-    animation_timer++;
+    // animation_timer++;
 }
 void update_level()
 {
@@ -165,6 +167,12 @@ void reset_frog()
     move_metasprite(
         frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 }
+void reset_timer()
+{
+    timer = (UINT16)-32; // converts -32 to equivilent Unsigned value
+    timer_tick = 0;
+    set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
+}
 void kill_frog()
 {
     // animate frog death here//
@@ -178,17 +186,11 @@ void kill_frog()
         return;
     }
     reset_frog();
+    reset_timer();
 }
-void reset_timer()
-{
-    timer = (UINT16)-32; // converts -32 to equivilent Unsigned value
-    timer_tick = 0;
-    set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
-}
-
 void init_level()
 {
-    set_sprite_data(0, 24, frogger_tiles);
+    set_sprite_data(0, frogger_TILE_COUNT, frogger_tiles);
     set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(47, 1, FROG_LIVES); // TESTING FROG LIFE UPDATE
     set_bkg_data(0x80, 68, FONT);
@@ -246,9 +248,9 @@ void update_move_xy()
         move_y += move_y < 0 ? 1 : -1; // ADD 1 OR -1 TO THE CURRENT MOVE_Y
     }
     else if (move_x == 0 || move_y == 0)
-    {                      //
-        is_moving = FALSE; // ALLOWS JOY PRESS
-        if (PLAYER.y < y_min)
+    {                         //
+        is_moving = FALSE;    // ALLOWS JOY PRESS
+        if (PLAYER.y < y_min) // CHECK IF FROG HAS MOVED UP THE STAGE FOR 10 PTS
         {
             score += 10;
             update_score();
@@ -321,25 +323,30 @@ void scroll_counters()
         SCROLL_LOG1 -= 1;    // LOG 1
         SCROLL_TURTLE1 += 1; // TURTLES 1
         SCROLL_TURTLE2 += 1; // TURTLES 2
-
-        if (PLAYER.position == ON_TURTLE)
+        if (!is_dying)       // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
-            PLAYER.x -= 1;
-            update_frog_direction(); // UPDATES THE FROG'S POSITION WHEN ON TURTLES AND LOGS
-        }
-        if (PLAYER.position == ON_LOG1)
-        {
-            PLAYER.x += 1;
-            update_frog_direction();
+            if (PLAYER.position == ON_TURTLE)
+            {
+                PLAYER.x -= 1;
+                update_frog_direction(); // UPDATES THE FROG'S POSITION WHEN ON TURTLES AND LOGS
+            }
+            if (PLAYER.position == ON_LOG1)
+            {
+                PLAYER.x += 1;
+                update_frog_direction();
+            }
         }
     }
     if (scx_counter % 5 == 0)
     {
         SCROLL_LOG3 -= 1; // LOG 3
-        if (PLAYER.position == ON_LOG3)
+        if (!is_dying)    // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
-            PLAYER.x += 1;
-            update_frog_direction();
+            if (PLAYER.position == ON_LOG3)
+            {
+                PLAYER.x += 1;
+                update_frog_direction();
+            }
         }
     }
     if (scx_counter % 4 == 0)
@@ -348,10 +355,13 @@ void scroll_counters()
         SCROLL_CAR3 += 1; // CAR3
         SCROLL_CAR4 -= 1; // CAR4
         SCROLL_CAR5 += 1; // CAR5
-        if (PLAYER.position == ON_LOG2)
+        if (!is_dying)    // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
-            PLAYER.x += 1;
-            update_frog_direction();
+            if (PLAYER.position == ON_LOG2)
+            {
+                PLAYER.x += 1;
+                update_frog_direction();
+            }
         }
     }
 
@@ -467,7 +477,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     { // ON OR BELOW THE SIDEWALK
         if ((left_tile >= CAR_TILES_START && left_tile <= CAR_TILES_END) || (right_tile >= CAR_TILES_START && right_tile <= CAR_TILES_END))
         { // CHECK FOR ALL CAR TILE COLLISIONS
-            kill_frog();
+            is_dying = TRUE;
         }
     }
     else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2)
@@ -479,7 +489,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                kill_frog();
+                is_dying = TRUE;
         }
     }
     else if (PLAYER.y == LOG1)
@@ -491,7 +501,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                kill_frog();
+                is_dying = TRUE;
         }
     }
     else if (PLAYER.y == LOG2)
@@ -503,7 +513,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                kill_frog();
+                is_dying = TRUE;
         }
     }
     else if (PLAYER.y == LOG3)
@@ -515,7 +525,7 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                kill_frog();
+                is_dying = TRUE;
         }
     }
     else if (PLAYER.y == WIN)
@@ -611,6 +621,34 @@ void stage_timer()
         kill_frog();
     }
 }
+void render_death_animation()
+{
+    if (death_animation_timer % 4 == 0)
+    {
+        move_metasprite(frogger_death_animation[death_animation_phase], 0, 0, PLAYER.x, PLAYER.y);
+        death_animation_phase++;
+
+        if (frogger_death_animation[death_animation_phase] == NULL)
+        {
+            // move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
+            kill_frog();
+            death_animation_phase = 0;
+            is_animating = FALSE;
+            is_dying = FALSE;
+
+            // break;
+        }
+    }
+    death_animation_timer++;
+    // move_metasprite(frogger_metasprites[6], 0, 0, PLAYER.x, PLAYER.y);
+}
+void edge_death(UINT8 death_pos_x)
+{
+    PLAYER.x = death_pos_x;
+    move_x = 0;
+    is_moving = FALSE;
+    is_dying = TRUE;
+}
 
 void main()
 {
@@ -640,11 +678,16 @@ void main()
         joy = joypad();
         // -------------------- COLLISION CHECK -------------------------------//
         collide_check(PLAYER.x, PLAYER.y);
+        // -------------------- EDGE DEATH CHECK -------------------------------//
+        if (PLAYER.x > 154)
+            edge_death(144);
+        else if (PLAYER.x < -8)
+            edge_death(0);
 
         // -------------------- BUTTON INPUT -------------------------------//
         if (GAMESTATE == game)
         { // REGULAR GAME TIME
-            if (!is_moving)
+            if (!is_moving && !is_dying)
             {
                 switch (joy)
                 {
@@ -672,7 +715,7 @@ void main()
                         is_moving = TRUE;
                         is_animating = TRUE;
                         move_y = -8;
-                        PLAYER.position = ON_NOTHING;
+                        PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
                         PLAYER.direction = UP;
                     }
                     break;
@@ -682,7 +725,7 @@ void main()
                         is_moving = TRUE;
                         is_animating = TRUE;
                         move_y = 8;
-                        PLAYER.position = ON_NOTHING;
+                        PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
                         PLAYER.direction = DOWN;
                     }
                     break;
@@ -703,8 +746,10 @@ void main()
         // ---------------- SCROLL COUNTERS --------------------------- //
         scroll_counters();
         // ---------------- ANIMATE FROG --------------------------- //
-        if (is_animating)
+        if (is_animating && !is_dying)
             render_animations();
+        if (is_dying)
+            render_death_animation();
         // ---------------- ANIMATE TURTLES --------------------------- //
         animate_turtles();
         // -------------------- DEBUG -------------------------------//

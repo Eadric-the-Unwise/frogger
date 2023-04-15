@@ -649,8 +649,8 @@ void stage_timer()
     timer++;
     if (timer_tick == 64)
     { // TIMER ENDS // 2048 + 1 because of function loop ordering
-        reset_timer();
-        frog_death();
+        // reset_timer();
+        kill_frog();
     }
 }
 void render_death_animation()
@@ -763,7 +763,8 @@ void main()
                 }
             }
             // --------------------STAGE TIMER -------------------------------//
-            stage_timer(); // REGULAR TIMER
+            if (!is_dying)
+                stage_timer(); // REGULAR TIMER
         }
         else if (GAMESTATE == drain) // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
             drain_timer();           // DRAIN TIMER // HIGH SPEED

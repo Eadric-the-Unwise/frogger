@@ -13,6 +13,7 @@
 // SOUND
 // STAGE 2
 GameCharacter PLAYER;                                    // FROG
+GameCharacter TOPHAT_FROG;                               // TOPHAT FROG
 UINT8 joy, last_joy;                                     // CHECKS FOR CURRENT AND PREVIOUS JOY INPUTS IN MAIN WHILE()
 UBYTE is_moving, is_animating, is_dying, turtles_diving; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION // IS ANIMATION = ANIMATES FROG UNTIL ANIMATION REACHES ITS END
 INT8 move_x, move_y;                                     // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
@@ -197,11 +198,15 @@ void frog_death()
 void init_level()
 {
     set_sprite_data(0, frogger_TILE_COUNT, frogger_tiles);
+    set_sprite_data(36, 4, tophat_frog_tiles);
     set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(47, 1, FROG_LIVES); // TESTING FROG LIFE UPDATE
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     set_bkg_tile_xy(4, 16, 0x90); // set furthest '0' on the righthand side of score on Stage 1 init only (is updated as soon as player gains points)
+    TOPHAT_FROG.spawn = TRUE;     // Jumping TOPHAT FROG will jump on LOG3 until !spawn
+    TOPHAT_FROG.x = 196;
+    TOPHAT_FROG.y = 42;
     turtles_diving = FALSE;
     score = 0;
     update_score();
@@ -326,7 +331,7 @@ void scroll_counters()
 {
     if (scx_counter % 6 == 0)
     {
-        SCROLL_LOG1 -= 1;    // LOG 1
+        SCROLL_LOG1 -= 1;    // LOG 1 (TOP LOG)
         SCROLL_TURTLE1 += 1; // TURTLES 1
         SCROLL_TURTLE2 += 1; // TURTLES 2
         if (!is_dying)       // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
@@ -345,8 +350,13 @@ void scroll_counters()
     }
     if (scx_counter % 5 == 0)
     {
-        SCROLL_LOG3 -= 1; // LOG 3
-        if (!is_dying)    // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
+        SCROLL_LOG3 -= 1; // LOG 3 (BOTTOM LOG)
+        if (TOPHAT_FROG.spawn)
+        {
+            TOPHAT_FROG.x += 1;
+            move_metasprite(tophat_frog_metasprites[0], 0x24, 2, TOPHAT_FROG.x, TOPHAT_FROG.y);
+        }
+        if (!is_dying) // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
             if (PLAYER.position == ON_LOG3)
             {
@@ -357,7 +367,7 @@ void scroll_counters()
     }
     if (scx_counter % 4 == 0)
     {                     // += moves the 'camera' to the right, resulting in objects on screen moving left
-        SCROLL_LOG2 -= 1; // LOG 2
+        SCROLL_LOG2 -= 1; // LOG 2 (CENTER LOG)
         SCROLL_CAR3 += 1; // CAR3
         SCROLL_CAR4 -= 1; // CAR4
         SCROLL_CAR5 += 1; // CAR5

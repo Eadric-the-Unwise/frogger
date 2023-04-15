@@ -50,6 +50,12 @@ UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
 UINT8 death_animation_phase;
 
+void kill_frog()
+{
+    move_x = 0;
+    is_moving = FALSE;
+    is_dying = TRUE;
+}
 void render_animations()
 {
 
@@ -173,7 +179,7 @@ void reset_timer()
     timer_tick = 0;
     set_bkg_tiles(5, 16, 10, 1, RESET_TIMER);
 }
-void kill_frog()
+void frog_death()
 {
     // animate frog death here//
     if (lives != 0)
@@ -468,10 +474,8 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else
     {
-        move_x = 0;
-        is_moving = FALSE;
-        is_dying = TRUE;
-        // kill_frog(); // WALL SPLAT, KILL FROG
+        kill_frog();
+        // WALL SPLAT, KILL FROG
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy)
@@ -646,7 +650,7 @@ void stage_timer()
     if (timer_tick == 64)
     { // TIMER ENDS // 2048 + 1 because of function loop ordering
         reset_timer();
-        kill_frog();
+        frog_death();
     }
 }
 void render_death_animation()
@@ -659,7 +663,7 @@ void render_death_animation()
         if (frogger_death_animation[death_animation_phase] == NULL)
         {
             // move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
-            kill_frog();
+            frog_death();
             death_animation_phase = 0;
             is_animating = FALSE;
             is_dying = FALSE;
@@ -673,9 +677,7 @@ void render_death_animation()
 void edge_death(UINT8 death_pos_x)
 {
     PLAYER.x = death_pos_x;
-    move_x = 0;
-    is_moving = FALSE;
-    is_dying = TRUE;
+    kill_frog();
 }
 
 void main()

@@ -61,7 +61,7 @@ void render_animations()
         {
             if (PLAYER.direction == DOWN)
                 move_metasprite_hflip(
-                    frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y + 48);
+                    frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y + HFLIP_OFFSET);
             else if (PLAYER.direction == UP)
                 move_metasprite(frogger_metasprites[0], 0, 0, PLAYER.x, PLAYER.y);
 
@@ -375,13 +375,16 @@ void scroll_counters()
 }
 void drain_timer()
 { // WHEN PLAYER REACHES TOP, DRAIN THE REMAINING TIMER
-    UINT8 current_tile, tile_offset, x_offset;
+    UINT8 current_tile, end_tile, tile_offset, x_offset;
 
-    tile_offset = (timer_tick) % 8; // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
+    tile_offset = (timer_tick) % 8; // 1, 2, 3, 4, 5, 6, 7, 0. These are the 8 tiles of animation for timer.
     x_offset = timer_tick / (8);    // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
     current_tile = get_bkg_tile_xy(6 + x_offset, 16);
+    end_tile = get_bkg_tile_xy(13, 16); // FINAL TILE IN TIMER
 
-    if (current_tile == 0x25 + tile_offset)
+    hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER UNTIL TIMER DRAINS
+
+    if (current_tile == TIMER_TILE_FULL + tile_offset) // FIRST TIMER TILE + tile_offset
     {
         set_bkg_tile_xy(6 + x_offset, 16, 0x26 + tile_offset);
     }
@@ -389,8 +392,30 @@ void drain_timer()
     score += 10;
     update_score();
     timer++;
-    if (timer_tick == 64)
+    if (end_tile == TIMER_TILE_EMPTY)
     { // TIMER ENDS // 2048 + 1 because of function loop ordering
+        // reset_timer();
+        // reset_frog();
+        timer_tick = 0;
+        GAMESTATE = reload;
+    }
+}
+void reload_timer()
+{
+    UINT8 current_tile, start_tile, tile_offset, x_offset;
+
+    tile_offset = (timer_tick) % 8;
+    x_offset = timer_tick / (8); // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
+    current_tile = get_bkg_tile_xy(13 - x_offset, 16);
+    start_tile = get_bkg_tile_xy(6, 16); // FINAL TILE IN TIMER
+
+    if (current_tile == TIMER_TILE_EMPTY - tile_offset) // FIRST TIMER TILE + tile_offset
+    {
+        set_bkg_tile_xy(13 - x_offset, 16, 0x2C - tile_offset);
+    }
+    timer_tick++;
+    if (start_tile == TIMER_TILE_FULL)
+    {
         reset_timer();
         reset_frog();
         GAMESTATE = game;
@@ -443,7 +468,10 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else
     {
-        kill_frog(); // WALL SPLAT, KILL FROG
+        move_x = 0;
+        is_moving = FALSE;
+        is_dying = TRUE;
+        // kill_frog(); // WALL SPLAT, KILL FROG
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy)
@@ -677,9 +705,10 @@ void main()
         last_joy = joy;
         joy = joypad();
         // -------------------- COLLISION CHECK -------------------------------//
-        collide_check(PLAYER.x, PLAYER.y);
+        if (GAMESTATE == game)
+            collide_check(PLAYER.x, PLAYER.y);
         // -------------------- EDGE DEATH CHECK -------------------------------//
-        if (PLAYER.x > 154)
+        if (PLAYER.x > 152)
             edge_death(144);
         else if (PLAYER.x < -8)
             edge_death(0);
@@ -736,6 +765,8 @@ void main()
         }
         else if (GAMESTATE == drain) // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
             drain_timer();           // DRAIN TIMER // HIGH SPEED
+        else if (GAMESTATE == reload)
+            reload_timer();
         else if (GAMESTATE == gameover)
         {
             return;

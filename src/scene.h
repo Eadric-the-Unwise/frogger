@@ -45,10 +45,14 @@
 #define HFLIP_OFFSET 48
 #define VFLIP_OFFSET 32
 
+#define TIMER_TILE_FULL 0x25  // FULL TIMER TILE
+#define TIMER_TILE_EMPTY 0x2D // EMPTY TIMER TILE
+
 typedef enum
 {
     game,
     drain,
+    reload,
     gameover
 } gamestates_e;
 typedef enum

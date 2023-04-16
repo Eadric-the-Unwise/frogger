@@ -491,6 +491,24 @@ void win_check(UINT8 frogx, UINT8 frogy)
         // WALL SPLAT, KILL FROG
     }
 }
+
+void collide_tophat()
+{
+    UINT8 PLAYER_L, PLAYER_R, TOPHAT_L, TOPHAT_R;
+
+    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L;
+    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R;
+    TOPHAT_L = (TOPHAT_FROG.x + 2 & 255);
+    TOPHAT_R = ((TOPHAT_FROG.x + 14) & 255);
+
+    if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
+    {
+        score += 400;
+        update_score();
+        TOPHAT_FROG.spawn = FALSE;
+        hide_metasprite(tophat_frog_metasprites[0], 2);
+    }
+}
 void collide_check(UINT8 frogx, UINT8 frogy)
 {
     UINT16 left_x, right_x, indexY;
@@ -564,15 +582,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     else if (PLAYER.y == LOG3)
     {
         if (TOPHAT_FROG.spawn) // 400 pt FROG
-        {
-            if ((PLAYER.x + left_offset) >= (TOPHAT_FROG.x & 255) && (PLAYER.x + right_offset) <= ((TOPHAT_FROG.x & 255) + 8))
-            {
-                score += 400;
-                update_score();
-                TOPHAT_FROG.spawn = FALSE;
-                hide_metasprite(tophat_frog_metasprites[0], 2);
-            }
-        }
+            collide_tophat();
+
         if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END))
         {                              // CHECK ALL LOG TILES
             PLAYER.position = ON_LOG3; // MOVES FROG AT LOG SPEED IN scroll_counters();
@@ -816,7 +827,7 @@ void main()
         }
         // debug
         if (joy & J_A)
-            printf("%d  ", TOPHAT_FROG.x & 255);
+            TOPHAT_FROG.spawn = TRUE;
         // debug
 
         // {

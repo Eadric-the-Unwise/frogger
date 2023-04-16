@@ -27,6 +27,8 @@
 #define STREET_OFFSET_R 13
 #define WATER_OFFSET_L 6
 #define WATER_OFFSET_R 9
+#define HITBOX_OFFSET_L 4
+#define HITBOX_OFFSET_R 12
 
 #define WATER_TILE 0x02
 

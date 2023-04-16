@@ -246,6 +246,9 @@ void move_frog()
                 frogger_up_down_animation[animation_phase], 0, 0, PLAYER.x, PLAYER.y + HFLIP_OFFSET); // OFFSET DUE TO PNG2ASSET.BAT OFFSET ERROR WHEN FLIPPED
     }
 }
+void animate_tophat()
+{
+}
 void update_move_xy()
 {
     if (move_x != 0)
@@ -353,8 +356,8 @@ void scroll_counters()
         SCROLL_LOG3 -= 1; // LOG 3 (BOTTOM LOG)
         if (TOPHAT_FROG.spawn)
         {
-            TOPHAT_FROG.x += 1;
-            move_metasprite(tophat_frog_metasprites[0], 0x24, 2, TOPHAT_FROG.x, TOPHAT_FROG.y);
+            TOPHAT_FROG.x += 1; //
+            move_metasprite(tophat_frog_metasprites[0], 0x24, 2, TOPHAT_FROG.x & 255, TOPHAT_FROG.y);
         }
         if (!is_dying) // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
@@ -560,6 +563,16 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     }
     else if (PLAYER.y == LOG3)
     {
+        if (TOPHAT_FROG.spawn) // 400 pt FROG
+        {
+            if ((PLAYER.x + left_offset) >= (TOPHAT_FROG.x & 255) && (PLAYER.x + right_offset) <= ((TOPHAT_FROG.x & 255) + 8))
+            {
+                score += 400;
+                update_score();
+                TOPHAT_FROG.spawn = FALSE;
+                hide_metasprite(tophat_frog_metasprites[0], 2);
+            }
+        }
         if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END))
         {                              // CHECK ALL LOG TILES
             PLAYER.position = ON_LOG3; // MOVES FROG AT LOG SPEED IN scroll_counters();
@@ -802,9 +815,11 @@ void main()
             reset_frog();
         }
         // debug
-        // printf("%u ", timer);
-        // // debug
-        // if (joy & J_A) {
+        if (joy & J_A)
+            printf("%d  ", TOPHAT_FROG.x & 255);
+        // debug
+
+        // {
         //     // printf("%u\n", PLAYER.y);
         //     set_bkg_tile_xy(4, 4, 0x11);
         // }

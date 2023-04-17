@@ -243,7 +243,7 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
             move_bkg(0, 0);
             LYC_REG = 0x17;
             break;
-        case 0x17:  // LOG 1
+        case 0x17:  // LOG 1 // TOP
             move_bkg(SCROLL_LOG1, 0);
             LYC_REG = 0x1F;
             break;
@@ -255,7 +255,7 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
             move_bkg(SCROLL_LOG2, 0);
             LYC_REG = 0x2F;
             break;
-        case 0x2F:  // LOG 3
+        case 0x2F:  // LOG 3 // BOTTOM
             move_bkg(SCROLL_LOG3, 0);
             LYC_REG = 0x37;
             break;
@@ -380,8 +380,6 @@ void drain_timer() {  // WHEN PLAYER REACHES TOP, DRAIN THE REMAINING TIMER
     update_score();
     timer++;
     if (end_tile == TIMER_TILE_EMPTY) {  // TIMER ENDS // 2048 + 1 because of function loop ordering
-        // reset_timer();
-        // reset_frog();
         timer_tick = 0;
         TIMERSTATE = reload;
     }
@@ -674,10 +672,6 @@ void render_game() {
         drain_timer();
     else if (TIMERSTATE == reload)  // RELOAD TIMER AFTER DRAIN_TIMER COMPLETES
         reload_timer();
-    // else if (GAMESTATE == gameover)
-    // {
-    //     return;
-    // }
 
     // --------------------MOVE FROG -------------------------------//
     update_move_xy();

@@ -22,6 +22,7 @@ UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COU
 UINT16 timer;                                            // STAGE TIMER
 UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
 UBYTE GAMESTATE;                                         // GAME, DRAIN (TIMER), GAMEOVER
+UBYTE TIMERSTATE;
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};       // ROW 1 TURTLES
 UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL}; // ROW 2 TURTLES
@@ -416,7 +417,7 @@ void drain_timer()
         // reset_timer();
         // reset_frog();
         timer_tick = 0;
-        GAMESTATE = reload;
+        TIMERSTATE = reload;
     }
 }
 void reload_timer()
@@ -437,7 +438,7 @@ void reload_timer()
     {
         reset_timer();
         reset_frog();
-        GAMESTATE = game;
+        TIMERSTATE = tick;
     }
 }
 void win_check(UINT8 frogx, UINT8 frogy)
@@ -458,31 +459,31 @@ void win_check(UINT8 frogx, UINT8 frogy)
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01)
     {
         set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
-        GAMESTATE = drain;
+        TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
     }
     else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02)
     {
         set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
-        GAMESTATE = drain;
+        TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
     }
     else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03)
     {
         set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
-        GAMESTATE = drain;
+        TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
     }
     else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04)
     {
         set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
-        GAMESTATE = drain;
+        TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
     }
     else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05)
     {
         set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
-        GAMESTATE = drain;
+        TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
     }
     else
@@ -491,7 +492,6 @@ void win_check(UINT8 frogx, UINT8 frogy)
         // WALL SPLAT, KILL FROG
     }
 }
-
 void collide_tophat()
 {
     UINT8 PLAYER_L, PLAYER_R, TOPHAT_L, TOPHAT_R;
@@ -713,7 +713,133 @@ void edge_death(UINT8 death_pos_x)
     PLAYER.x = death_pos_x;
     kill_frog();
 }
+void render_game()
+{
+    // while (1)
+    // {
+    last_joy = joy;
+    joy = joypad();
 
+    // -------------------- EDGE DEATH CHECK -------------------------------//
+    if (PLAYER.x > 152)
+        edge_death(144);
+    else if (PLAYER.x < -8)
+        edge_death(0);
+
+    if (TIMERSTATE == tick) // REGULAR GAME TIME
+    {                       // REGULAR GAME TIME
+        // -------------------- COLLISION CHECK -------------------------------//
+        collide_check(PLAYER.x, PLAYER.y);
+        // -------------------- BUTTON INPUT -------------------------------//
+        if (!is_moving && !is_dying)
+        {
+            switch (joy)
+            {
+            case J_LEFT:
+                if (CHANGED_BUTTONS & J_LEFT)
+                {
+                    is_moving = TRUE;
+                    is_animating = TRUE;
+                    move_x = -12;
+                    PLAYER.direction = LEFT;
+                }
+                break;
+            case J_RIGHT:
+                if (CHANGED_BUTTONS & J_RIGHT)
+                {
+                    is_moving = TRUE;
+                    is_animating = TRUE;
+                    move_x = 12;
+                    PLAYER.direction = RIGHT;
+                }
+                break;
+            case J_UP:
+                if (CHANGED_BUTTONS & J_UP)
+                {
+                    is_moving = TRUE;
+                    is_animating = TRUE;
+                    move_y = -8;
+                    PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
+                    PLAYER.direction = UP;
+                }
+                break;
+            case J_DOWN:
+                if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN))
+                { // PREVENT FROG FROM GOING BELOW SPAWN POINT
+                    is_moving = TRUE;
+                    is_animating = TRUE;
+                    move_y = 8;
+                    PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
+                    PLAYER.direction = DOWN;
+                }
+                break;
+            }
+        }
+        // --------------------STAGE TIMER -------------------------------//
+        if (!is_dying)
+            stage_timer(); // REGULAR TIMER
+    }
+    else if (TIMERSTATE == drain) // DRAIN TIMER // HIGH SPEED
+        drain_timer();
+    else if (TIMERSTATE == reload) // RELOAD TIMER AFTER DRAIN_TIMER COMPLETES
+        reload_timer();
+    // else if (GAMESTATE == gameover)
+    // {
+    //     return;
+    // }
+
+    // --------------------MOVE FROG -------------------------------//
+    update_move_xy();
+    // ---------------- SCROLL COUNTERS --------------------------- //
+    scroll_counters();
+    // ---------------- ANIMATE FROG --------------------------- //
+    if (is_animating && !is_dying)
+        render_animations();
+    if (is_dying)
+        render_death_animation();
+    // ---------------- ANIMATE TURTLES --------------------------- //
+    animate_turtles();
+    // -------------------- DEBUG -------------------------------//
+    // if (joy & J_SELECT)
+    // {
+    //     reset_frog();
+    // }
+    // debug
+    if (joy & J_A)
+        TOPHAT_FROG.spawn = TRUE;
+    if (CHANGED_BUTTONS & J_START)
+    {
+        GAMESTATE = pause;
+        last_joy = joy;
+        joy = joypad();
+        // return 0;
+    }
+    // debug
+
+    // {
+    //     // printf("%u\n", PLAYER.y);
+    //     set_bkg_tile_xy(4, 4, 0x11);
+    // }
+
+    wait_vbl_done();
+    refresh_OAM();
+    // }
+}
+void render_pause()
+{
+    // while (1)
+    // {
+    last_joy = joy;
+    joy = joypad();
+    if (CHANGED_BUTTONS & J_START)
+    {
+        GAMESTATE = game;
+        // return 0;
+    }
+    wait_vbl_done();
+    refresh_OAM();
+    // }
+}
 void main()
 {
     STAT_REG = 0x45; // enable LYC=LY interrupt so that we can set a specific line it will fire at //
@@ -733,109 +859,22 @@ void main()
     DISPLAY_ON;
 
     GAMESTATE = game;
+    TIMERSTATE = tick;
 
     init_level();
 
     while (1)
     {
-        last_joy = joy;
-        joy = joypad();
-        // -------------------- COLLISION CHECK -------------------------------//
-        if (GAMESTATE == game)
-            collide_check(PLAYER.x, PLAYER.y);
-        // -------------------- EDGE DEATH CHECK -------------------------------//
-        if (PLAYER.x > 152)
-            edge_death(144);
-        else if (PLAYER.x < -8)
-            edge_death(0);
-
-        // -------------------- BUTTON INPUT -------------------------------//
-        if (GAMESTATE == game)
-        { // REGULAR GAME TIME
-            if (!is_moving && !is_dying)
-            {
-                switch (joy)
-                {
-                case J_LEFT:
-                    if (CHANGED_BUTTONS & J_LEFT)
-                    {
-                        is_moving = TRUE;
-                        is_animating = TRUE;
-                        move_x = -12;
-                        PLAYER.direction = LEFT;
-                    }
-                    break;
-                case J_RIGHT:
-                    if (CHANGED_BUTTONS & J_RIGHT)
-                    {
-                        is_moving = TRUE;
-                        is_animating = TRUE;
-                        move_x = 12;
-                        PLAYER.direction = RIGHT;
-                    }
-                    break;
-                case J_UP:
-                    if (CHANGED_BUTTONS & J_UP)
-                    {
-                        is_moving = TRUE;
-                        is_animating = TRUE;
-                        move_y = -8;
-                        PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
-                        PLAYER.direction = UP;
-                    }
-                    break;
-                case J_DOWN:
-                    if ((PLAYER.y <= 100) && (CHANGED_BUTTONS & J_DOWN))
-                    { // PREVENT FROG FROM GOING BELOW SPAWN POINT
-                        is_moving = TRUE;
-                        is_animating = TRUE;
-                        move_y = 8;
-                        PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
-                        PLAYER.direction = DOWN;
-                    }
-                    break;
-                }
-            }
-            // --------------------STAGE TIMER -------------------------------//
-            if (!is_dying)
-                stage_timer(); // REGULAR TIMER
-        }
-        else if (GAMESTATE == drain) // TIMER IS DRAINING, WIN CONDITION. DRAINS REMAINING TIMER INTO POINTS
-            drain_timer();           // DRAIN TIMER // HIGH SPEED
-        else if (GAMESTATE == reload)
-            reload_timer();
-        else if (GAMESTATE == gameover)
+        switch (GAMESTATE)
         {
-            return;
+        case game:
+            render_game();
+            break;
+        case pause:
+            render_pause();
+            break;
+            // case gameover:
+            //     break;
         }
-
-        // --------------------MOVE FROG -------------------------------//
-        update_move_xy();
-        // ---------------- SCROLL COUNTERS --------------------------- //
-        scroll_counters();
-        // ---------------- ANIMATE FROG --------------------------- //
-        if (is_animating && !is_dying)
-            render_animations();
-        if (is_dying)
-            render_death_animation();
-        // ---------------- ANIMATE TURTLES --------------------------- //
-        animate_turtles();
-        // -------------------- DEBUG -------------------------------//
-        if (joy & J_SELECT)
-        {
-            reset_frog();
-        }
-        // debug
-        if (joy & J_A)
-            TOPHAT_FROG.spawn = TRUE;
-        // debug
-
-        // {
-        //     // printf("%u\n", PLAYER.y);
-        //     set_bkg_tile_xy(4, 4, 0x11);
-        // }
-
-        wait_vbl_done();
-        refresh_OAM();
     }
 }

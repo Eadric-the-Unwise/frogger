@@ -53,10 +53,16 @@
 typedef enum
 {
     game,
-    drain,
-    reload,
+    pause,
     gameover
 } gamestates_e;
+
+typedef enum
+{
+    tick,
+    drain,
+    reload
+} timerstate_e;
 typedef enum
 {
     ON_NOTHING,

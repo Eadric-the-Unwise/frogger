@@ -21,7 +21,8 @@ UINT8 scx_counter;                                       // VBLANK INTERRUPT COU
 UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COUNTER
 UINT16 timer;                                            // STAGE TIMER
 UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
-UBYTE GAMESTATE;                                         // GAME, DRAIN (TIMER), GAMEOVER
+UINT8 pause_tick;
+UBYTE GAMESTATE; // GAME, DRAIN (TIMER), GAMEOVER
 UBYTE TIMERSTATE;
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};       // ROW 1 TURTLES
@@ -807,7 +808,7 @@ void render_game()
     // debug
     if (joy & J_A)
         TOPHAT_FROG.spawn = TRUE;
-    if (CHANGED_BUTTONS & J_START)
+    if (CLICKED(J_START))
     {
         GAMESTATE = pause;
         last_joy = joy;
@@ -827,10 +828,12 @@ void render_game()
 }
 void render_pause()
 {
+
     // while (1)
     // {
     last_joy = joy;
     joy = joypad();
+
     if (CHANGED_BUTTONS & J_START)
     {
         GAMESTATE = game;

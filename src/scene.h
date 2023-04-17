@@ -14,6 +14,9 @@
 #include "../res/tiles/tophat_frog.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
+#define CLICKED(x) ((joy & x) && (joy & x) != (last_joy & x))
+#define RELEASED(x) (!(joy & x) && (joy & x) != (last_joy & x))
+#define ISDOWN(x) (joy & (x))
 
 #define WIN 12
 #define LOG1 20

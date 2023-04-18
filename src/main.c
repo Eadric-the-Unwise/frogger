@@ -55,6 +55,22 @@ UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
 UINT8 death_animation_phase;
 
+BYTE overlap(INT16 r1_y, INT16 r1_x, INT16 l1_y, INT16 l1_x, INT16 r2_y, INT16 r2_x, INT16 l2_y, INT16 l2_x) {  // BYTE IS SAME AS BOOLEAN (ONLY SHORTER NAME)
+    // Standard rectangle-to-rectangle collision check
+
+    if (l1_x == r1_x || l1_y == r1_y || l2_x == r2_x || l2_y == r2_y) {
+        // the line cannot have positive overlap
+        return 0x00U;
+    }
+    if ((l1_x >= r2_x) || (l2_x >= r1_x)) {
+        return 0x00U;
+    }
+    if ((r1_y >= l2_y) || (r2_y >= l1_y)) {
+        return 0X00U;
+    }
+
+    return 0x01U;
+}
 void kill_frog() {
     move_x = 0;
     is_moving = FALSE;
@@ -443,19 +459,25 @@ void win_check(UINT8 frogx, UINT8 frogy) {
     }
 }
 void collide_tophat() {
-    UINT8 PLAYER_L, PLAYER_R, TOPHAT_L, TOPHAT_R;
+    UINT8 PLAYER_L, PLAYER_R, PLAYER_T, PLAYER_B, TOPHAT_L, TOPHAT_R, TOPHAT_T, TOPHAT_B;
 
-    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L;
-    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R;
-    TOPHAT_L = (TOPHAT_FROG.x + 2 & 255);
-    TOPHAT_R = ((TOPHAT_FROG.x + 14) & 255);
+    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L;    // PLAYER LEFT X
+    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R;    // PLAYER RIGHT X
+    PLAYER_T = PLAYER.y;                      // PLAYER TOP Y
+    PLAYER_B = PLAYER.y + 10;                 // PLAYER BOTTOM Y
+    TOPHAT_L = (TOPHAT_FROG.x + 2 & 255);     // NPC LEFT X
+    TOPHAT_R = ((TOPHAT_FROG.x + 14) & 255);  // NPC RIGHT X
+    TOPHAT_T = TOPHAT_FROG.y;                 // NPC TOP Y
+    TOPHAT_B = TOPHAT_FROG.y + 10;            // NPC BOTTOM Y
 
-    if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L)  // X CROSSOVER COLLISION
-    {
-        score += 400;
-        update_score();
-        TOPHAT_FROG.spawn = FALSE;
-        hide_metasprite(tophat_frog_metasprites[0], 2);
+    // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
+    if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, TOPHAT_FROG.y, TOPHAT_R, TOPHAT_FROG.y + 10, TOPHAT_L) == 0x01U) {
+        {
+            score += 400;
+            update_score();
+            TOPHAT_FROG.spawn = FALSE;
+            hide_metasprite(tophat_frog_metasprites[0], 2);
+        }
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy) {
@@ -715,6 +737,7 @@ void render_pause() {
     wait_vbl_done();
     refresh_OAM();
 }
+
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;

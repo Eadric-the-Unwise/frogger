@@ -5,7 +5,8 @@
 
 #include "scene.h"
 //------------GOALS-------------//
-// better solution for is_dying?
+// OPTIMIZE WIN_CHECK
+// PRACTICE BINARY OPERATORS ON PAPER
 // debugger
 // WIN SCREEN
 // GAME OVER
@@ -22,6 +23,7 @@ UINT8 turtle_counter, dive_counter;                       // TURTLE ANIMATION CO
 UINT16 timer;                                             // STAGE TIMER
 UINT8 timer_tick;                                         // TIMER TICK (8 TICKS PER TIMER BAR TILE)
 UINT8 pause_tick;
+UINT8 flash;      // 'glowing' flash effect animation timer in update_palette();
 UBYTE GAMESTATE;  // GAME, DRAIN (TIMER), GAMEOVER
 UBYTE TIMERSTATE;
 
@@ -198,6 +200,7 @@ void init_level() {
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     set_bkg_tile_xy(4, 16, 0x90);  // set furthest '0' on the righthand side of score on Stage 1 init only (is updated as soon as player gains points)
     TOPHAT_FROG.spawn = TRUE;      // Jumping TOPHAT FROG will jump on LOG3 until !spawn
+    TOPHAT_FROG.flash = TRUE;
     TOPHAT_FROG.x = 196;
     TOPHAT_FROG.y = 42;
     turtles_diving = FALSE;
@@ -309,6 +312,28 @@ void parallaxScroll() {  // CAMERA Y POSITION IN TILE ROWS
             break;
     }
 }
+void update_palette() {  // UPDATE THE SPRITE COLOR PALETTES IF FLASHING
+    UINT8 prop = 0;
+    prop = get_sprite_prop(0);
+
+    if (flash < 4) {
+        prop &= ~(1 << 4);  // ~0b00001000 // CLEARS THE 4TH BIT NO MATTER WHAT. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+        //
+    } else if (flash >= 4) {
+        prop |= (1 << 4);  // 0b00010000 // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+    }
+
+    if (flash >= 7)
+        flash = 0;
+
+    if (PLAYER.flash) {
+        set_sprite_prop(0, prop);
+        set_sprite_prop(1, prop);
+    }
+    flash++;
+    // tophat_prop ^= 0b00010000; // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+}
+
 void scroll_counters() {
     if (scx_counter % 6 == 0) {
         SCROLL_LOG1 -= 1;     // LOG 1 (TOP LOG)
@@ -331,6 +356,7 @@ void scroll_counters() {
         if (TOPHAT_FROG.spawn) {
             TOPHAT_FROG.x += 1;  //
             move_metasprite(tophat_frog_metasprites[0], 0x24, 2, TOPHAT_FROG.x & 255, TOPHAT_FROG.y);
+            update_palette();
         }
         if (!is_dying)  // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
@@ -439,18 +465,38 @@ void win_check(UINT8 frogx, UINT8 frogy) {
         hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02) {
         set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
+        if (PLAYER.flash) {
+            score += 200;
+            update_score();
+            PLAYER.flash = FALSE;
+        }
         TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03) {
         set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
+        if (PLAYER.flash) {
+            score += 200;
+            update_score();
+            PLAYER.flash = FALSE;
+        }
         TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04) {
         set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
+        if (PLAYER.flash) {
+            score += 200;
+            update_score();
+            PLAYER.flash = FALSE;
+        }
         TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05) {
         set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
+        if (PLAYER.flash) {
+            score += 200;
+            update_score();
+            PLAYER.flash = FALSE;
+        }
         TIMERSTATE = drain;
         hide_metasprite(frogger_metasprites[0], 0);  // HIDE FROGGER
     } else {
@@ -473,9 +519,8 @@ void collide_tophat() {
     // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
     if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, TOPHAT_FROG.y, TOPHAT_R, TOPHAT_FROG.y + 10, TOPHAT_L) == 0x01U) {
         {
-            score += 400;
-            update_score();
             TOPHAT_FROG.spawn = FALSE;
+            PLAYER.flash = TRUE;
             hide_metasprite(tophat_frog_metasprites[0], 2);
         }
     }
@@ -634,6 +679,18 @@ void edge_death(UINT8 death_pos_x) {
     PLAYER.x = death_pos_x;
     kill_frog();
 }
+
+void render_pause() {
+    last_joy = joy;
+    joy = joypad();
+
+    if (CLICKED(J_START)) {
+        unpause_game();
+    }
+    wait_vbl_done();
+    refresh_OAM();
+}
+
 void render_game() {
     last_joy = joy;
     joy = joypad();
@@ -706,6 +763,9 @@ void render_game() {
         render_death_animation();
     // ---------------- ANIMATE TURTLES --------------------------- //
     animate_turtles();
+    // ---------------- UPDATE PALETTE --------------------------- //
+    if (PLAYER.flash)
+        update_palette();
     // -------------------- DEBUG -------------------------------//
     // if (joy & J_SELECT)
     // {
@@ -727,16 +787,6 @@ void render_game() {
     wait_vbl_done();
     refresh_OAM();
 }
-void render_pause() {
-    last_joy = joy;
-    joy = joypad();
-
-    if (CLICKED(J_START)) {
-        unpause_game();
-    }
-    wait_vbl_done();
-    refresh_OAM();
-}
 
 void main() {
     STAT_REG = 0x45;  // enable LYC=LY interrupt so that we can set a specific line it will fire at //
@@ -748,6 +798,7 @@ void main() {
     set_interrupts(VBL_IFLAG | LCD_IFLAG);
 
     DISABLE_VBL_TRANSFER;
+    OBP0_REG = 0b11100100;
     OBP1_REG = 0b10011100;
     SPRITES_8x16;  // MUST be 8x16 or 8x8. Can change in different scenes only
     SHOW_BKG;

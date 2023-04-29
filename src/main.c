@@ -21,7 +21,7 @@ UBYTE is_moving, is_animating, is_dying, turtles_diving; // IS MOVING = LOCKS JO
 INT8 move_x, move_y;                                     // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
 UINT8 scx_counter;                                       // VBLANK INTERRUPT COUNTER
 UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COUNTER
-UINT16 timer;                                            // STAGE TIMER
+UINT16 timer, fly_timer, fly_respawn_timer;              // STAGE TIMER // FLY TIMER
 UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
 UINT8 pause_tick;
 UINT8 flash;     // 'glowing' flash effect animation timer in update_palette();
@@ -36,6 +36,7 @@ UINT8 dive_tiles[] = {DIVE_TILES_START, DIVE_TILES_END, WATER_TILE, WATER_TILE, 
 UINT8 turtle_tile_index, dive_tile_index;
 
 cave_t cave[5];
+UINT8 cave_fly_x[] = {7, 39, 71, 103, 135}; // 5 spawn locations of FLY spawn_fly();
 
 UINT8 y_min;
 
@@ -79,6 +80,12 @@ BYTE overlap(INT16 r1_y, INT16 r1_x, INT16 l1_y, INT16 l1_x, INT16 r2_y, INT16 r
     }
 
     return 0x01U;
+}
+void remove_fly()
+{
+    FLY.spawn = FALSE;
+    hide_metasprite(fly_metasprites[0], 4);
+    fly_timer = fly_respawn_timer = 0;
 }
 void kill_frog()
 {
@@ -493,6 +500,8 @@ void drain_timer()
     end_tile = get_bkg_tile_xy(13, 16); // FINAL TILE IN TIMER
 
     hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER UNTIL TIMER DRAINS
+    if (FLY.spawn)
+        remove_fly();
 
     if (current_tile == TIMER_TILE_FULL + tile_offset) // FIRST TIMER TILE + tile_offset
     {
@@ -866,7 +875,17 @@ void edge_death(UINT8 death_pos_x)
 void spawn_fly()
 {
     FLY.spawn = TRUE;
-    move_metasprite(fly_metasprites[0], 0x28, 4, 8, 8);
+    UINT8 rng = timer % 5; // 1, 2, 3, 4, 0
+    if (!cave[rng].empty)  // CAVE IS ALREADY FILLED
+    {
+        for (UINT8 c = rng & 4; cave[c].empty; c++) // search for next available cave, searching sequenctially from right of !empty cave, loop back to cave[0]
+        {
+            if (cave[c].empty)
+                move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[c], 7);
+        }
+    }
+    else // EMPTY CAVE
+        move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[rng], 7);
 }
 void render_pause()
 {
@@ -892,8 +911,17 @@ void render_game()
     else if (PLAYER.x < -8)
         edge_death(0);
     // -------------------- SPAWN FLY CHECK -------------------------------//
-    if (PLAYER.y == 60 && FLY.spawn == FALSE)
+    if (fly_respawn_timer < 240)
+        fly_respawn_timer++;
+    if (PLAYER.y <= 60 && fly_respawn_timer >= 240 && FLY.spawn == FALSE)
         spawn_fly();
+
+    if (FLY.spawn)
+    {
+        fly_timer++;
+        if (fly_timer >= 600)
+            remove_fly();
+    }
 
     if (TIMERSTATE == tick) // REGULAR GAME TIME
     {                       // REGULAR GAME TIME

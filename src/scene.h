@@ -12,6 +12,7 @@
 #include "../res/tiles/reset_timer.h"
 #include "../res/tiles/log_frog.h"
 #include "../res/tiles/win_frog.h"
+#include "../res/tiles/fly.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
 #define CLICKED(x) ((joy & x) && (joy & x) != (last_joy & x))
@@ -50,21 +51,24 @@
 #define HFLIP_OFFSET 48
 #define VFLIP_OFFSET 32
 
-#define TIMER_TILE_FULL 0x25   // FULL TIMER TILE
-#define TIMER_TILE_EMPTY 0x2D  // EMPTY TIMER TILE
+#define TIMER_TILE_FULL 0x25  // FULL TIMER TILE
+#define TIMER_TILE_EMPTY 0x2D // EMPTY TIMER TILE
 
-typedef enum {
+typedef enum
+{
     game,
     pause,
     gameover
 } gamestates_e;
 
-typedef enum {
+typedef enum
+{
     tick,
     drain,
     reload
 } timerstate_e;
-typedef enum {
+typedef enum
+{
     ON_NOTHING,
     ON_TURTLE,
     ON_LOG3,
@@ -72,23 +76,30 @@ typedef enum {
     ON_LOG1
 } position_e;
 
-typedef enum {
+typedef enum
+{
     UP,
     DOWN,
     LEFT,
     RIGHT
 } direction_e;
 
-typedef struct GameCharacter {
+typedef struct GameCharacter_t
+{
     UBYTE spawn;
     UBYTE flash;
     INT16 x;
     INT16 y;
     position_e position;
     direction_e direction;
-} GameCharacter;
+} GameCharacter_t;
 
-UINT8 scroll[10];  // VALUES THE AMOUNT IT HAS SCROLLED
+typedef struct cave_t
+{
+    UBYTE empty;
+} cave_t;
+
+UINT8 scroll[10]; // VALUES THE AMOUNT IT HAS SCROLLED
 
 #define SCROLL_LOG1 scroll[0]
 #define SCROLL_TURTLE1 scroll[1]

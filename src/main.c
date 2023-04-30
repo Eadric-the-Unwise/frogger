@@ -2,9 +2,11 @@
 #include <gbdk/metasprites.h>
 #include <stdio.h>
 #include <string.h>
+#include <rand.h>
 
 #include "scene.h"
 //------------GOALS-------------//
+// ADD MORE RNG TO FLY WHEN IDLING ABOVE SIDEWALK
 // OPTIMIZE WIN_CHECK
 // PRACTICE BINARY OPERATORS ON PAPER
 // debugger
@@ -61,6 +63,8 @@ UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
 UINT8 death_animation_phase;
 
+UINT8 seed;
+
 BYTE overlap(INT16 r1_y, INT16 r1_x, INT16 l1_y, INT16 l1_x, INT16 r2_y, INT16 r2_x, INT16 l2_y, INT16 l2_x)
 { // BYTE IS SAME AS BOOLEAN (ONLY SHORTER NAME)
     // Standard rectangle-to-rectangle collision check
@@ -85,7 +89,8 @@ void remove_fly()
 {
     FLY.spawn = FALSE;
     hide_metasprite(fly_metasprites[0], 4);
-    fly_timer = fly_respawn_timer = 0;
+    fly_timer = 0;
+    fly_respawn_timer = 0;
 }
 void kill_frog()
 {
@@ -258,6 +263,8 @@ void init_level()
     {
         cave[i].empty = TRUE;
     }
+    seed = DIV_REG;
+    initrand(seed);
 }
 void move_frog()
 {
@@ -875,8 +882,11 @@ void edge_death(UINT8 death_pos_x)
 void spawn_fly()
 {
     FLY.spawn = TRUE;
-    UINT8 rng = timer % 5; // 1, 2, 3, 4, 0
-    if (!cave[rng].empty)  // CAVE IS ALREADY FILLED
+    // UINT8 rng = timer % 5; // 1, 2, 3, 4, 0
+    seed = DIV_REG;
+    initrand(seed);
+    UINT8 rng = rand() % 5;
+    if (!cave[rng].empty) // CAVE IS ALREADY FILLED
     {
         for (UINT8 c = rng & 4; cave[c].empty; c++) // search for next available cave, searching sequenctially from right of !empty cave, loop back to cave[0]
         {
@@ -911,7 +921,7 @@ void render_game()
     else if (PLAYER.x < -8)
         edge_death(0);
     // -------------------- SPAWN FLY CHECK -------------------------------//
-    if (fly_respawn_timer < 240)
+    if (fly_respawn_timer < 240) // FLY MUST WAIT 4 SECONDS BEFORE RESPAWNING
         fly_respawn_timer++;
     if (PLAYER.y <= 60 && fly_respawn_timer >= 240 && FLY.spawn == FALSE)
         spawn_fly();
@@ -919,7 +929,7 @@ void render_game()
     if (FLY.spawn)
     {
         fly_timer++;
-        if (fly_timer >= 600)
+        if (fly_timer >= 600) // FLY LASTS ON SCREEN FOR 10 SECONDS
             remove_fly();
     }
 

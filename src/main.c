@@ -552,7 +552,12 @@ void pts_200_flash()
     update_score();
     PLAYER.flash = FALSE;
 }
-
+void pts_200_fly()
+{
+    score += 200;
+    update_score();
+    remove_fly();
+}
 void collide_npc(GameCharacter_t *npc)
 {
     UINT8 PLAYER_L, PLAYER_R, PLAYER_T, PLAYER_B, NPC_L, NPC_R, NPC_T, NPC_B;
@@ -569,17 +574,19 @@ void collide_npc(GameCharacter_t *npc)
     // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
     if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, NPC_T, NPC_R, NPC_B, NPC_L) == 0x01U)
     {
-        if (PLAYER.y == LOG3)
+        if (PLAYER.y == LOG3) // LOG FROG
         {
             npc->spawn = FALSE;
             npc->flash = FALSE;
             hide_metasprite(log_frog_metasprites[0], 2);
             PLAYER.flash = TRUE;
         }
-        else if (PLAYER.y == WIN)
+        else if (PLAYER.y == WIN) // CAVE
         {
             if (FLY.spawn)
-                remove_fly();
+            {
+                pts_200_fly(); // APPLY 200 PTS AND REMOVE_FLY
+            }
         }
     }
 }

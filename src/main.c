@@ -265,6 +265,7 @@ void init_level()
     {
         cave[i].empty = TRUE;
     }
+    FLY.y = 7;
     fly_respawn_timer = MAX_FLY_RESET_TIMER; // FLY WILL IMMEDIATELY SPAWN WHEN PLAYER.Y <=60. (HELPS PREVENT RNG MANIPULATION ON SLOW FLY SPAWN)
 }
 void move_frog()
@@ -414,7 +415,6 @@ void update_palette()
     flash++;
     // tophat_prop ^= 0b00010000; // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
 }
-
 void scroll_counters()
 {
     if (scx_counter % 6 == 0)
@@ -508,8 +508,8 @@ void drain_timer()
     end_tile = get_bkg_tile_xy(13, 16); // FINAL TILE IN TIMER
 
     hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER UNTIL TIMER DRAINS
-    if (FLY.spawn)
-        remove_fly();
+    // if (FLY.spawn)
+    //     remove_fly();
 
     if (current_tile == TIMER_TILE_FULL + tile_offset) // FIRST TIMER TILE + tile_offset
     {
@@ -552,6 +552,37 @@ void pts_200_flash()
     update_score();
     PLAYER.flash = FALSE;
 }
+
+void collide_npc(GameCharacter_t *npc)
+{
+    UINT8 PLAYER_L, PLAYER_R, PLAYER_T, PLAYER_B, NPC_L, NPC_R, NPC_T, NPC_B;
+
+    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L; // PLAYER LEFT X
+    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R; // PLAYER RIGHT X
+    PLAYER_T = PLAYER.y;                   // PLAYER TOP Y
+    PLAYER_B = PLAYER.y + 10;              // PLAYER BOTTOM Y
+    NPC_L = (npc->x + 2 & 255);            // NPC LEFT X
+    NPC_R = ((npc->x + 14) & 255);         // NPC RIGHT X
+    NPC_T = npc->y;                        // NPC TOP Y
+    NPC_B = npc->y + 10;                   // NPC BOTTOM Y
+
+    // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
+    if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, NPC_T, NPC_R, NPC_B, NPC_L) == 0x01U)
+    {
+        if (PLAYER.y == LOG3)
+        {
+            npc->spawn = FALSE;
+            npc->flash = FALSE;
+            hide_metasprite(log_frog_metasprites[0], 2);
+            PLAYER.flash = TRUE;
+        }
+        else if (PLAYER.y == WIN)
+        {
+            if (FLY.spawn)
+                remove_fly();
+        }
+    }
+}
 void win_check(UINT8 frogx, UINT8 frogy)
 {
     UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
@@ -569,11 +600,13 @@ void win_check(UINT8 frogx, UINT8 frogy)
 
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01)
     {
-        if (cave[0].empty)
+        if (CAVE1.empty)
         {
-            cave[0].empty = FALSE;
+            CAVE1.empty = FALSE;
             if (PLAYER.flash)
                 pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
             set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
             TIMERSTATE = drain;
             hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
@@ -585,11 +618,13 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02)
     {
-        if (cave[1].empty)
+        if (CAVE2.empty)
         {
-            cave[1].empty = FALSE;
+            CAVE2.empty = FALSE;
             if (PLAYER.flash)
                 pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
             set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
             TIMERSTATE = drain;
             hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
@@ -601,11 +636,13 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03)
     {
-        if (cave[2].empty)
+        if (CAVE3.empty)
         {
-            cave[2].empty = FALSE;
+            CAVE3.empty = FALSE;
             if (PLAYER.flash)
                 pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
             set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
             TIMERSTATE = drain;
             hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
@@ -617,11 +654,13 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04)
     {
-        if (cave[3].empty)
+        if (CAVE4.empty)
         {
-            cave[3].empty = FALSE;
+            CAVE4.empty = FALSE;
             if (PLAYER.flash)
                 pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
             set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
             TIMERSTATE = drain;
             hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
@@ -633,11 +672,13 @@ void win_check(UINT8 frogx, UINT8 frogy)
     }
     else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05)
     {
-        if (cave[4].empty)
+        if (CAVE5.empty)
         {
-            cave[4].empty = FALSE;
+            CAVE5.empty = FALSE;
             if (PLAYER.flash)
                 pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
             set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
             TIMERSTATE = drain;
             hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
@@ -650,30 +691,6 @@ void win_check(UINT8 frogx, UINT8 frogy)
     else
     {
         kill_frog(); // WALL SPLAT, KILL FROG
-    }
-}
-void collide_tophat()
-{
-    UINT8 PLAYER_L, PLAYER_R, PLAYER_T, PLAYER_B, TOPHAT_L, TOPHAT_R, TOPHAT_T, TOPHAT_B;
-
-    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L; // PLAYER LEFT X
-    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R; // PLAYER RIGHT X
-    PLAYER_T = PLAYER.y;                   // PLAYER TOP Y
-    PLAYER_B = PLAYER.y + 10;              // PLAYER BOTTOM Y
-    TOPHAT_L = (LOG_FROG.x + 2 & 255);     // NPC LEFT X
-    TOPHAT_R = ((LOG_FROG.x + 14) & 255);  // NPC RIGHT X
-    TOPHAT_T = LOG_FROG.y;                 // NPC TOP Y
-    TOPHAT_B = LOG_FROG.y + 10;            // NPC BOTTOM Y
-
-    // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
-    if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, LOG_FROG.y, TOPHAT_R, LOG_FROG.y + 10, TOPHAT_L) == 0x01U)
-    {
-        {
-            LOG_FROG.spawn = FALSE;
-            LOG_FROG.flash = FALSE;
-            PLAYER.flash = TRUE;
-            hide_metasprite(log_frog_metasprites[0], 2);
-        }
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy)
@@ -707,7 +724,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     { // ON OR BELOW THE SIDEWALK
         if ((left_tile >= CAR_TILES_START && left_tile <= CAR_TILES_END) || (right_tile >= CAR_TILES_START && right_tile <= CAR_TILES_END))
         { // CHECK FOR ALL CAR TILE COLLISIONS
-            is_dying = TRUE;
+            kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2)
@@ -719,7 +737,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG1)
@@ -731,7 +750,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG2)
@@ -743,13 +763,14 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG3)
     {
         if (LOG_FROG.spawn) // 400 pt FROG
-            collide_tophat();
+            collide_npc(&LOG_FROG);
 
         if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END))
         {                              // CHECK ALL LOG TILES
@@ -758,12 +779,15 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == WIN)
     {
         win_check(PLAYER.x, PLAYER.y);
+        if (FLY.spawn)
+            collide_npc(&FLY);
     }
 }
 void animate_turtles()
@@ -900,6 +924,7 @@ void spawn_fly()
             {
                 FLY.spawn = TRUE;
                 move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[c], 7);
+                FLY.x = cave_fly_x[c];
             }
         }
     }
@@ -908,6 +933,7 @@ void spawn_fly()
 
         FLY.spawn = TRUE;
         move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[rng], 7);
+        FLY.x = cave_fly_x[rng];
     }
 }
 void render_pause()
@@ -922,7 +948,6 @@ void render_pause()
     wait_vbl_done();
     refresh_OAM();
 }
-
 void render_game()
 {
     last_joy = joy;

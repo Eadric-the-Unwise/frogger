@@ -19,11 +19,11 @@
 #define RELEASED(x) (!(joy & x) && (joy & x) != (last_joy & x))
 #define ISDOWN(x) (joy & (x))
 
-// #define CAVE1 cave[0]
-// #define CAVE2 cave[1]
-// #define CAVE3 cave[2]
-// #define CAVE4 cave[3]
-// #define CAVE5 cave[4]
+#define CAVE1 cave[0]
+#define CAVE2 cave[1]
+#define CAVE3 cave[2]
+#define CAVE4 cave[3]
+#define CAVE5 cave[4]
 
 #define WIN 12
 #define LOG1 20

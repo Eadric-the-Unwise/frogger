@@ -60,6 +60,7 @@
 #define TIMER_TILE_FULL 0x25  // FULL TIMER TILE
 #define TIMER_TILE_EMPTY 0x2D // EMPTY TIMER TILE
 
+#define MAX_FLY_RESET_TIMER 240
 typedef enum
 {
     game,

@@ -63,7 +63,9 @@ UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
 UINT8 death_animation_phase;
 
-UINT8 seed;
+UINT16 seed;
+UINT8 debug_rng;
+UINT8 debug_fly_spawn;
 
 BYTE overlap(INT16 r1_y, INT16 r1_x, INT16 l1_y, INT16 l1_x, INT16 r2_y, INT16 r2_x, INT16 l2_y, INT16 l2_x)
 { // BYTE IS SAME AS BOOLEAN (ONLY SHORTER NAME)
@@ -263,8 +265,7 @@ void init_level()
     {
         cave[i].empty = TRUE;
     }
-    seed = DIV_REG;
-    initrand(seed);
+    fly_respawn_timer = MAX_FLY_RESET_TIMER; // FLY WILL IMMEDIATELY SPAWN WHEN PLAYER.Y <=60. (HELPS PREVENT RNG MANIPULATION ON SLOW FLY SPAWN)
 }
 void move_frog()
 {
@@ -881,21 +882,33 @@ void edge_death(UINT8 death_pos_x)
 }
 void spawn_fly()
 {
-    FLY.spawn = TRUE;
-    // UINT8 rng = timer % 5; // 1, 2, 3, 4, 0
+    UINT8 timer_rng = timer % 5; // 1, 2, 3, 4, 0
     seed = DIV_REG;
     initrand(seed);
-    UINT8 rng = rand() % 5;
+    UINT8 rng = (rand() + timer_rng) % 5;
+    // debug_rng = rng;
     if (!cave[rng].empty) // CAVE IS ALREADY FILLED
     {
-        for (UINT8 c = rng & 4; cave[c].empty; c++) // search for next available cave, searching sequenctially from right of !empty cave, loop back to cave[0]
+        for (UINT8 c = rng; cave[c].empty; c++) // search for next available cave, searching sequenctially from right of !empty cave, loop back to cave[0]
         {
+            if (c > 4)
+            {
+                c = 0;
+                // debug_rng = c;
+            }
             if (cave[c].empty)
+            {
+                FLY.spawn = TRUE;
                 move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[c], 7);
+            }
         }
     }
-    else // EMPTY CAVE
+    else
+    { // EMPTY CAVE
+
+        FLY.spawn = TRUE;
         move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[rng], 7);
+    }
 }
 void render_pause()
 {
@@ -921,17 +934,18 @@ void render_game()
     else if (PLAYER.x < -8)
         edge_death(0);
     // -------------------- SPAWN FLY CHECK -------------------------------//
-    if (fly_respawn_timer < 240) // FLY MUST WAIT 4 SECONDS BEFORE RESPAWNING
+    if (fly_respawn_timer < MAX_FLY_RESET_TIMER) // FLY MUST WAIT 4 SECONDS BEFORE RESPAWNING //
         fly_respawn_timer++;
-    if (PLAYER.y <= 60 && fly_respawn_timer >= 240 && FLY.spawn == FALSE)
+    if (PLAYER.y <= 60 && fly_respawn_timer >= MAX_FLY_RESET_TIMER && FLY.spawn == FALSE) //
         spawn_fly();
 
     if (FLY.spawn)
     {
         fly_timer++;
-        if (fly_timer >= 600) // FLY LASTS ON SCREEN FOR 10 SECONDS
+        if (fly_timer >= 600) // FLY LASTS ON SCREEN FOR 10 SECONDS // 600
             remove_fly();
     }
+    // debug_fly_spawn = FLY.spawn;
 
     if (TIMERSTATE == tick) // REGULAR GAME TIME
     {                       // REGULAR GAME TIME

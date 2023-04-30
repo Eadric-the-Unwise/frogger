@@ -2,26 +2,31 @@
 #include <gbdk/metasprites.h>
 #include <stdio.h>
 #include <string.h>
+#include <rand.h>
 
 #include "scene.h"
 //------------GOALS-------------//
-// better solution for is_dying?
+// ADD MORE RNG TO FLY WHEN IDLING ABOVE SIDEWALK
+// OPTIMIZE WIN_CHECK
+// PRACTICE BINARY OPERATORS ON PAPER
 // debugger
 // WIN SCREEN
 // GAME OVER
 // CGB PALLETES
 // SOUND
 // STAGE 2
-GameCharacter PLAYER;                                    // FROG
-GameCharacter TOPHAT_FROG;                               // TOPHAT FROG
+GameCharacter_t PLAYER;                                  // FROG
+GameCharacter_t LOG_FROG;                                // TOPHAT FROG
+GameCharacter_t FLY;                                     // 200 pt FLY
 UINT8 joy, last_joy;                                     // CHECKS FOR CURRENT AND PREVIOUS JOY INPUTS IN MAIN WHILE()
 UBYTE is_moving, is_animating, is_dying, turtles_diving; // IS MOVING = LOCKS JOY WHILE FROG IS ANIMATION TO NEXT TILE // TURTLES DIVING = TURTLES CURRENTLY ANIMATING DIVE ANIMATION // IS ANIMATION = ANIMATES FROG UNTIL ANIMATION REACHES ITS END
 INT8 move_x, move_y;                                     // IF NOT 0, MOVE FROG 1 PIXEL PER LOOP IN move_frog();
 UINT8 scx_counter;                                       // VBLANK INTERRUPT COUNTER
 UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COUNTER
-UINT16 timer;                                            // STAGE TIMER
+UINT16 timer, fly_timer, fly_respawn_timer;              // STAGE TIMER // FLY TIMER
 UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
 UINT8 pause_tick;
+UINT8 flash;     // 'glowing' flash effect animation timer in update_palette();
 UBYTE GAMESTATE; // GAME, DRAIN (TIMER), GAMEOVER
 UBYTE TIMERSTATE;
 
@@ -31,6 +36,9 @@ UINT8 turtle_divers2[] = {0x10, 0x11, 0x12, NULL}; // ROW 2 TURTLES
 UINT8 turtle_tiles[] = {TURTLE_TILES_START, 0x11, TURTLE_TILES_END, TURTLE_TILES_END};                                   // REGULAR TURTLE ANIMATION LOOP
 UINT8 dive_tiles[] = {DIVE_TILES_START, DIVE_TILES_END, WATER_TILE, WATER_TILE, DIVE_TILES_END, DIVE_TILES_START, NULL}; // DIVING TURTLE ANIMATION
 UINT8 turtle_tile_index, dive_tile_index;
+
+cave_t cave[5];
+UINT8 cave_fly_x[] = {7, 39, 71, 103, 135}; // 5 spawn locations of FLY spawn_fly();
 
 UINT8 y_min;
 
@@ -55,11 +63,44 @@ UINT8 death_animation_timer = 1;
 UINT8 animation_phase;
 UINT8 death_animation_phase;
 
+UINT16 seed;
+UINT8 debug_rng;
+UINT8 debug_fly_spawn;
+
+BYTE overlap(INT16 r1_y, INT16 r1_x, INT16 l1_y, INT16 l1_x, INT16 r2_y, INT16 r2_x, INT16 l2_y, INT16 l2_x)
+{ // BYTE IS SAME AS BOOLEAN (ONLY SHORTER NAME)
+    // Standard rectangle-to-rectangle collision check
+
+    if (l1_x == r1_x || l1_y == r1_y || l2_x == r2_x || l2_y == r2_y)
+    {
+        // the line cannot have positive overlap
+        return 0x00U;
+    }
+    if ((l1_x >= r2_x) || (l2_x >= r1_x))
+    {
+        return 0x00U;
+    }
+    if ((r1_y >= l2_y) || (r2_y >= l1_y))
+    {
+        return 0X00U;
+    }
+
+    return 0x01U;
+}
+void remove_fly()
+{
+    FLY.spawn = FALSE;
+    hide_metasprite(fly_metasprites[0], 4);
+    fly_timer = 0;
+    fly_respawn_timer = 0;
+}
 void kill_frog()
 {
     move_x = 0;
     is_moving = FALSE;
     is_dying = TRUE;
+    if (PLAYER.flash)
+        PLAYER.flash = FALSE;
 }
 void render_animations()
 {
@@ -200,15 +241,17 @@ void frog_death()
 void init_level()
 {
     set_sprite_data(0, frogger_TILE_COUNT, frogger_tiles);
-    set_sprite_data(36, 4, tophat_frog_tiles);
+    set_sprite_data(0x24, 4, log_frog_tiles);
+    set_sprite_data(0x28, 4, fly_tiles);
     set_bkg_data(0, 47, BKG_TILES);
     set_bkg_data(47, 1, FROG_LIVES); // TESTING FROG LIFE UPDATE
     set_bkg_data(0x80, 68, FONT);
     set_bkg_tiles(0, 0, 32, 32, BKG_MAP);
     set_bkg_tile_xy(4, 16, 0x90); // set furthest '0' on the righthand side of score on Stage 1 init only (is updated as soon as player gains points)
-    TOPHAT_FROG.spawn = TRUE;     // Jumping TOPHAT FROG will jump on LOG3 until !spawn
-    TOPHAT_FROG.x = 196;
-    TOPHAT_FROG.y = 42;
+    LOG_FROG.spawn = TRUE;        // Jumping TOPHAT FROG will jump on LOG3 until !spawn
+    LOG_FROG.flash = TRUE;
+    LOG_FROG.x = 196;
+    LOG_FROG.y = 42;
     turtles_diving = FALSE;
     score = 0;
     update_score();
@@ -218,6 +261,12 @@ void init_level()
     reset_frog();
     update_player1_player2();
     update_frog_lives();
+    for (UINT8 i = 0; i != 5; i++) // CLEAR ALL CAVE empty FLAGS
+    {
+        cave[i].empty = TRUE;
+    }
+    FLY.y = 7;
+    fly_respawn_timer = MAX_FLY_RESET_TIMER; // FLY WILL IMMEDIATELY SPAWN WHEN PLAYER.Y <=60. (HELPS PREVENT RNG MANIPULATION ON SLOW FLY SPAWN)
 }
 void move_frog()
 {
@@ -332,6 +381,40 @@ void parallaxScroll()
         break;
     }
 }
+void update_palette()
+{ // CORRECTLY UPDATES THE SPRITE COLOR PALETTES IF FLASHING IS ACTIVE. (move_metasprite OVERWRITES PROPERTY FLAGS, SO THIS CORRECTS THOSE UPDATES)
+
+    UINT8 prop = 0;
+    prop = get_sprite_prop(0);
+
+    if (flash < 4)
+    {
+        prop &= ~(1 << 4); // ~0b00001000 // CLEARS THE 4TH BIT NO MATTER WHAT. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+        //
+    }
+    else if (flash >= 4)
+    {
+        prop |= (1 << 4); // 0b00010000 // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+    }
+
+    if (flash >= 7)
+        flash = 0;
+
+    if (PLAYER.flash)
+    {
+        set_sprite_prop(0, prop);
+        set_sprite_prop(1, prop);
+    }
+    else if (LOG_FROG.flash)
+    {
+        prop &= ~(1 << 5); // hflip - CLEARS BIT 5
+        prop &= ~(1 << 6); // vflip - CLEARS BIT 6
+        set_sprite_prop(2, prop);
+        set_sprite_prop(3, prop);
+    }
+    flash++;
+    // tophat_prop ^= 0b00010000; // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
+}
 void scroll_counters()
 {
     if (scx_counter % 6 == 0)
@@ -356,10 +439,11 @@ void scroll_counters()
     if (scx_counter % 5 == 0)
     {
         SCROLL_LOG3 -= 1; // LOG 3 (BOTTOM LOG)
-        if (TOPHAT_FROG.spawn)
+        if (LOG_FROG.spawn)
         {
-            TOPHAT_FROG.x += 1; //
-            move_metasprite(tophat_frog_metasprites[0], 0x24, 2, TOPHAT_FROG.x & 255, TOPHAT_FROG.y);
+            LOG_FROG.x += 1; //
+            move_metasprite(log_frog_metasprites[0], 0x24, 2, LOG_FROG.x & 255, LOG_FROG.y);
+            update_palette();
         }
         if (!is_dying) // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
@@ -424,6 +508,8 @@ void drain_timer()
     end_tile = get_bkg_tile_xy(13, 16); // FINAL TILE IN TIMER
 
     hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER UNTIL TIMER DRAINS
+    // if (FLY.spawn)
+    //     remove_fly();
 
     if (current_tile == TIMER_TILE_FULL + tile_offset) // FIRST TIMER TILE + tile_offset
     {
@@ -460,6 +546,50 @@ void reload_timer()
         TIMERSTATE = tick;
     }
 }
+void pts_200_flash()
+{
+    score += 200;
+    update_score();
+    PLAYER.flash = FALSE;
+}
+void pts_200_fly()
+{
+    score += 200;
+    update_score();
+    remove_fly();
+}
+void collide_npc(GameCharacter_t *npc)
+{
+    UINT8 PLAYER_L, PLAYER_R, PLAYER_T, PLAYER_B, NPC_L, NPC_R, NPC_T, NPC_B;
+
+    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L; // PLAYER LEFT X
+    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R; // PLAYER RIGHT X
+    PLAYER_T = PLAYER.y;                   // PLAYER TOP Y
+    PLAYER_B = PLAYER.y + 10;              // PLAYER BOTTOM Y
+    NPC_L = (npc->x + 2 & 255);            // NPC LEFT X
+    NPC_R = ((npc->x + 14) & 255);         // NPC RIGHT X
+    NPC_T = npc->y;                        // NPC TOP Y
+    NPC_B = npc->y + 10;                   // NPC BOTTOM Y
+
+    // if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
+    if (overlap(PLAYER.y, PLAYER_R, PLAYER.y + 10, PLAYER_L, NPC_T, NPC_R, NPC_B, NPC_L) == 0x01U)
+    {
+        if (PLAYER.y == LOG3) // LOG FROG
+        {
+            npc->spawn = FALSE;
+            npc->flash = FALSE;
+            hide_metasprite(log_frog_metasprites[0], 2);
+            PLAYER.flash = TRUE;
+        }
+        else if (PLAYER.y == WIN) // CAVE
+        {
+            if (FLY.spawn)
+            {
+                pts_200_fly(); // APPLY 200 PTS AND REMOVE_FLY
+            }
+        }
+    }
+}
 void win_check(UINT8 frogx, UINT8 frogy)
 {
     UINT16 left_x, right_x, indexY, tileindex_L, tileindex_R;
@@ -477,55 +607,97 @@ void win_check(UINT8 frogx, UINT8 frogy)
 
     if (COLLISION_MAP[tileindex_L] == 0x01 && COLLISION_MAP[tileindex_R] == 0x01)
     {
-        set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
-        TIMERSTATE = drain;
-        hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        if (CAVE1.empty)
+        {
+            CAVE1.empty = FALSE;
+            if (PLAYER.flash)
+                pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
+            set_bkg_tiles(1, 1, 2, 2, WIN_FROG);
+            TIMERSTATE = drain;
+            hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        }
+        else
+        {
+            kill_frog(); // WALL SPLAT, KILL FROG
+        }
     }
     else if (COLLISION_MAP[tileindex_L] == 0x02 && COLLISION_MAP[tileindex_R] == 0x02)
     {
-        set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
-        TIMERSTATE = drain;
-        hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        if (CAVE2.empty)
+        {
+            CAVE2.empty = FALSE;
+            if (PLAYER.flash)
+                pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
+            set_bkg_tiles(5, 1, 2, 2, WIN_FROG);
+            TIMERSTATE = drain;
+            hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        }
+        else
+        {
+            kill_frog(); // WALL SPLAT, KILL FROG
+        }
     }
     else if (COLLISION_MAP[tileindex_L] == 0x03 && COLLISION_MAP[tileindex_R] == 0x03)
     {
-        set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
-        TIMERSTATE = drain;
-        hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        if (CAVE3.empty)
+        {
+            CAVE3.empty = FALSE;
+            if (PLAYER.flash)
+                pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
+            set_bkg_tiles(9, 1, 2, 2, WIN_FROG);
+            TIMERSTATE = drain;
+            hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        }
+        else
+        {
+            kill_frog(); // WALL SPLAT, KILL FROG
+        }
     }
     else if (COLLISION_MAP[tileindex_L] == 0x04 && COLLISION_MAP[tileindex_R] == 0x04)
     {
-        set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
-        TIMERSTATE = drain;
-        hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        if (CAVE4.empty)
+        {
+            CAVE4.empty = FALSE;
+            if (PLAYER.flash)
+                pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
+            set_bkg_tiles(13, 1, 2, 2, WIN_FROG);
+            TIMERSTATE = drain;
+            hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        }
+        else
+        {
+            kill_frog(); // WALL SPLAT, KILL FROG
+        }
     }
     else if (COLLISION_MAP[tileindex_L] == 0x05 && COLLISION_MAP[tileindex_R] == 0x05)
     {
-        set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
-        TIMERSTATE = drain;
-        hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        if (CAVE5.empty)
+        {
+            CAVE5.empty = FALSE;
+            if (PLAYER.flash)
+                pts_200_flash();
+            // if (FLY.spawn)
+            //     collide_npc(&FLY);
+            set_bkg_tiles(17, 1, 2, 2, WIN_FROG);
+            TIMERSTATE = drain;
+            hide_metasprite(frogger_metasprites[0], 0); // HIDE FROGGER
+        }
+        else
+        {
+            kill_frog(); // WALL SPLAT, KILL FROG
+        }
     }
     else
     {
-        kill_frog();
-        // WALL SPLAT, KILL FROG
-    }
-}
-void collide_tophat()
-{
-    UINT8 PLAYER_L, PLAYER_R, TOPHAT_L, TOPHAT_R;
-
-    PLAYER_L = PLAYER.x + HITBOX_OFFSET_L;
-    PLAYER_R = PLAYER.x + HITBOX_OFFSET_R;
-    TOPHAT_L = (TOPHAT_FROG.x + 2 & 255);
-    TOPHAT_R = ((TOPHAT_FROG.x + 14) & 255);
-
-    if (PLAYER_L <= TOPHAT_R && PLAYER_R >= TOPHAT_R || PLAYER_R >= TOPHAT_L && PLAYER_L <= TOPHAT_L) // X CROSSOVER COLLISION
-    {
-        score += 400;
-        update_score();
-        TOPHAT_FROG.spawn = FALSE;
-        hide_metasprite(tophat_frog_metasprites[0], 2);
+        kill_frog(); // WALL SPLAT, KILL FROG
     }
 }
 void collide_check(UINT8 frogx, UINT8 frogy)
@@ -559,7 +731,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
     { // ON OR BELOW THE SIDEWALK
         if ((left_tile >= CAR_TILES_START && left_tile <= CAR_TILES_END) || (right_tile >= CAR_TILES_START && right_tile <= CAR_TILES_END))
         { // CHECK FOR ALL CAR TILE COLLISIONS
-            is_dying = TRUE;
+            kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == TURTLE1 || PLAYER.y == TURTLE2)
@@ -571,7 +744,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG1)
@@ -583,7 +757,8 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG2)
@@ -595,13 +770,14 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == LOG3)
     {
-        if (TOPHAT_FROG.spawn) // 400 pt FROG
-            collide_tophat();
+        if (LOG_FROG.spawn) // 400 pt FROG
+            collide_npc(&LOG_FROG);
 
         if ((left_tile >= LOG_TILES_START && left_tile <= LOG_TILES_END || left_tile >= LOG_TILES_START && right_tile <= LOG_TILES_END))
         {                              // CHECK ALL LOG TILES
@@ -610,12 +786,15 @@ void collide_check(UINT8 frogx, UINT8 frogy)
         else
         {
             if (!is_moving) // KILL FROG ONLY AFTER IT COMPLETES ITS MOVEMENT
-                is_dying = TRUE;
+                kill_frog();
+            ;
         }
     }
     else if (PLAYER.y == WIN)
     {
         win_check(PLAYER.x, PLAYER.y);
+        if (FLY.spawn)
+            collide_npc(&FLY);
     }
 }
 void animate_turtles()
@@ -690,7 +869,7 @@ void stage_timer()
     if (timer != (UINT16)-32 && timer % 32 == 0)
     {
         tile_offset = (timer / 32) % 8; // 1, 2, 3, 4, 5, 6, 7, 8. Back to 0
-        x_offset = timer / (32 * 8);    // MULTIPLYING BY 8 GETS YOU THE TILE VALUE //
+        x_offset = timer / (32 * 8);    // MULTIPLYING BY 8 GETS YOU THE TILE VALUE
         current_tile = get_bkg_tile_xy(6 + x_offset, 16);
 
         if (current_tile == 0x25 + tile_offset)
@@ -732,6 +911,50 @@ void edge_death(UINT8 death_pos_x)
     PLAYER.x = death_pos_x;
     kill_frog();
 }
+void spawn_fly()
+{
+    UINT8 timer_rng = timer % 5; // 1, 2, 3, 4, 0
+    seed = DIV_REG;
+    initrand(seed);
+    UINT8 rng = (rand() + timer_rng) % 5;
+    // debug_rng = rng;
+    if (!cave[rng].empty) // CAVE IS ALREADY FILLED
+    {
+        for (UINT8 c = rng; cave[c].empty; c++) // search for next available cave, searching sequenctially from right of !empty cave, loop back to cave[0]
+        {
+            if (c > 4)
+            {
+                c = 0;
+                // debug_rng = c;
+            }
+            if (cave[c].empty)
+            {
+                FLY.spawn = TRUE;
+                move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[c], 7);
+                FLY.x = cave_fly_x[c];
+            }
+        }
+    }
+    else
+    { // EMPTY CAVE
+
+        FLY.spawn = TRUE;
+        move_metasprite(fly_metasprites[0], 0x28, 4, cave_fly_x[rng], 7);
+        FLY.x = cave_fly_x[rng];
+    }
+}
+void render_pause()
+{
+    last_joy = joy;
+    joy = joypad();
+
+    if (CLICKED(J_START))
+    {
+        unpause_game();
+    }
+    wait_vbl_done();
+    refresh_OAM();
+}
 void render_game()
 {
     last_joy = joy;
@@ -742,6 +965,19 @@ void render_game()
         edge_death(144);
     else if (PLAYER.x < -8)
         edge_death(0);
+    // -------------------- SPAWN FLY CHECK -------------------------------//
+    if (fly_respawn_timer < MAX_FLY_RESET_TIMER) // FLY MUST WAIT 4 SECONDS BEFORE RESPAWNING //
+        fly_respawn_timer++;
+    if (PLAYER.y <= 60 && fly_respawn_timer >= MAX_FLY_RESET_TIMER && FLY.spawn == FALSE) //
+        spawn_fly();
+
+    if (FLY.spawn)
+    {
+        fly_timer++;
+        if (fly_timer >= 600) // FLY LASTS ON SCREEN FOR 10 SECONDS // 600
+            remove_fly();
+    }
+    // debug_fly_spawn = FLY.spawn;
 
     if (TIMERSTATE == tick) // REGULAR GAME TIME
     {                       // REGULAR GAME TIME
@@ -812,6 +1048,9 @@ void render_game()
         render_death_animation();
     // ---------------- ANIMATE TURTLES --------------------------- //
     animate_turtles();
+    // ---------------- UPDATE PALETTE --------------------------- //
+    if (PLAYER.flash || LOG_FROG.flash)
+        update_palette();
     // -------------------- DEBUG -------------------------------//
     // if (joy & J_SELECT)
     // {
@@ -819,7 +1058,7 @@ void render_game()
     // }
     // debug
     if (joy & J_A)
-        TOPHAT_FROG.spawn = TRUE;
+        LOG_FROG.spawn = TRUE;
     if (CLICKED(J_START))
     {
         pause_game();
@@ -831,18 +1070,6 @@ void render_game()
     //     set_bkg_tile_xy(4, 4, 0x11);
     // }
 
-    wait_vbl_done();
-    refresh_OAM();
-}
-void render_pause()
-{
-    last_joy = joy;
-    joy = joypad();
-
-    if (CLICKED(J_START))
-    {
-        unpause_game();
-    }
     wait_vbl_done();
     refresh_OAM();
 }
@@ -858,6 +1085,7 @@ void main()
     set_interrupts(VBL_IFLAG | LCD_IFLAG);
 
     DISABLE_VBL_TRANSFER;
+    OBP0_REG = 0b11100100;
     OBP1_REG = 0b10011100;
     SPRITES_8x16; // MUST be 8x16 or 8x8. Can change in different scenes only
     SHOW_BKG;

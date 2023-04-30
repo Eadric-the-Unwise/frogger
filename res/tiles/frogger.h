@@ -2,9 +2,9 @@
 #ifndef METASPRITE_frogger_H
 #define METASPRITE_frogger_H
 
-#include <stdint.h>
-#include <gbdk/platform.h>
 #include <gbdk/metasprites.h>
+#include <gbdk/platform.h>
+#include <stdint.h>
 
 #define frogger_TILE_ORIGIN 0
 #define frogger_TILE_H 16

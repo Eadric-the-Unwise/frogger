@@ -6,17 +6,24 @@
 #include "../res/tiles/bkg_tiles.h"
 #include "../res/tiles/collision_map.h"
 #include "../res/tiles/font.h"
+#include "../res/tiles/frog_lives.h"
 #include "../res/tiles/frogger.h"
 #include "../res/tiles/frogger_16.h"
 #include "../res/tiles/reset_timer.h"
+#include "../res/tiles/log_frog.h"
 #include "../res/tiles/win_frog.h"
-#include "../res/tiles/frog_lives.h"
-#include "../res/tiles/tophat_frog.h"
+#include "../res/tiles/fly.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
 #define CLICKED(x) ((joy & x) && (joy & x) != (last_joy & x))
 #define RELEASED(x) (!(joy & x) && (joy & x) != (last_joy & x))
 #define ISDOWN(x) (joy & (x))
+
+#define CAVE1 cave[0]
+#define CAVE2 cave[1]
+#define CAVE3 cave[2]
+#define CAVE4 cave[3]
+#define CAVE5 cave[4]
 
 #define WIN 12
 #define LOG1 20
@@ -53,6 +60,7 @@
 #define TIMER_TILE_FULL 0x25  // FULL TIMER TILE
 #define TIMER_TILE_EMPTY 0x2D // EMPTY TIMER TILE
 
+#define MAX_FLY_RESET_TIMER 240
 typedef enum
 {
     game,
@@ -83,14 +91,20 @@ typedef enum
     RIGHT
 } direction_e;
 
-typedef struct GameCharacter
+typedef struct GameCharacter_t
 {
     UBYTE spawn;
+    UBYTE flash;
     INT16 x;
     INT16 y;
     position_e position;
     direction_e direction;
-} GameCharacter;
+} GameCharacter_t;
+
+typedef struct cave_t
+{
+    UBYTE empty;
+} cave_t;
 
 UINT8 scroll[10]; // VALUES THE AMOUNT IT HAS SCROLLED
 

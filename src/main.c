@@ -25,9 +25,8 @@ UINT8 scx_counter;                                       // VBLANK INTERRUPT COU
 UINT8 turtle_counter, dive_counter;                      // TURTLE ANIMATION COUNTER
 UINT16 timer, fly_timer, fly_respawn_timer;              // STAGE TIMER // FLY TIMER
 UINT8 timer_tick;                                        // TIMER TICK (8 TICKS PER TIMER BAR TILE)
-UINT8 pause_tick;
-UINT8 flash;     // 'glowing' flash effect animation timer in update_palette();
-UBYTE GAMESTATE; // GAME, DRAIN (TIMER), GAMEOVER
+UINT8 flash_phase;                                       // 'glowing' flash effect animation timer in update_palette();
+UBYTE GAMESTATE;                                         // GAME, DRAIN (TIMER), GAMEOVER
 UBYTE TIMERSTATE;
 
 UINT8 turtle_divers1[] = {0x0A, 0x0B, NULL};       // ROW 1 TURTLES
@@ -387,18 +386,18 @@ void update_palette()
     UINT8 prop = 0;
     prop = get_sprite_prop(0);
 
-    if (flash < 4)
+    if (flash_phase < 6)
     {
         prop &= ~(1 << 4); // ~0b00001000 // CLEARS THE 4TH BIT NO MATTER WHAT. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
         //
     }
-    else if (flash >= 4)
+    else if (flash_phase >= 6)
     {
         prop |= (1 << 4); // 0b00010000 // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
     }
 
-    if (flash >= 7)
-        flash = 0;
+    if (flash_phase >= 11)
+        flash_phase = 0;
 
     if (PLAYER.flash)
     {
@@ -412,7 +411,7 @@ void update_palette()
         set_sprite_prop(2, prop);
         set_sprite_prop(3, prop);
     }
-    flash++;
+    flash_phase++;
     // tophat_prop ^= 0b00010000; // FLIPS THE 4TH BIT VALUE FROM 0 TO 1 ALTERNATIVELY. 4TH BIT IS THE COLOR PALETTE (CHECK GBDK MANUAL BIT 4, BIT 5 etc.)
 }
 void scroll_counters()

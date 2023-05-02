@@ -9,7 +9,7 @@ call .\clean.bat
 @REM -Wl-j .noi bgb debugging -Wm-yS
 @set GBDK=..\..\..\gbdk
 %GBDK%\bin\lcc.exe -autobank -Wf--debug -Wl-y -Wb-ext=.rel -Wb-v -Wl-yt0x1B -Wl-yoA -Wl-ya4 -o frogger-clone.gb^
- src\*.c sound\*.c res\tiles\*.c sound\hUGEDriver.obj.o
+ src\*.c res\tiles\*.c
 
  
 

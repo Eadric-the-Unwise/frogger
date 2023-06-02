@@ -8,7 +8,7 @@ call .\clean.bat
 @REM ENTER YOUR GBDK DIRECTORY IN @set GBDK = ...
 @REM -Wl-j .noi bgb debugging -Wm-yS
 @set GBDK=..\..\..\gbdk
-%GBDK%\bin\lcc.exe -autobank -Wf--debug -Wl-y -Wb-ext=.rel -Wb-v -Wl-yt0x1B -Wl-yoA -Wl-ya4 -o frogger-clone.gb^
+%GBDK%\bin\lcc.exe -autobank -Wf--debug -Wl-y -Wb-ext=.rel -Wb-v -Wl-yt0x1B -Wl-yoA -Wl-ya4 -o build\frogger-clone.gb^
  src\*.c res\tiles\*.c
 
  

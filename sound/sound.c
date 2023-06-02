@@ -2,7 +2,10 @@
 
 #include <gb/gb.h>
 
-// extern const hUGESong_t *song;
+#include "hUGEdriver.h"
+
+UBYTE music_paused;
+UBYTE music_playing;
 
 //{channel #, resume music delay,     reg, reg, reg, reg, reg,};
 const unsigned char SFX_0[] = {0, 20, 0x00, 0x80, 0xB1, 0x82, 0x80};
@@ -85,3 +88,31 @@ void sfx_play(unsigned char *sfx_id) {
 //     }
 //     SWITCH_ROM(__save);
 // }
+
+// cut sound on all channels
+void mute_channels() NONBANKED {
+    NR12_REG = NR22_REG = NR32_REG = NR42_REG = 0;
+    NR14_REG = NR24_REG = NR44_REG = SFX_CH_RETRIGGER;
+    NR51_REG = 0xFF;
+}
+
+void music_play() NONBANKED {
+    NR52_REG = 0x80;
+    // add_VBL(hUGE_dosound);
+    // waitpadup();
+    music_playing = TRUE;
+    music_paused = FALSE;
+}
+void music_resume() NONBANKED {
+    NR52_REG = 0x80;
+    // add_VBL(hUGE_dosound);
+    // waitpadup();
+    music_playing = TRUE;
+    music_paused = FALSE;
+}
+void music_pause() NONBANKED {
+    remove_VBL(hUGE_dosound);
+    mute_channels();
+    music_playing = FALSE;
+    music_paused = TRUE;
+}

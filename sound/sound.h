@@ -1,10 +1,10 @@
-#ifndef __SOUND__
-#define __SOUND__
+#ifndef __SOUND_H_INCLUDE__
+#define __SOUND_H_INCLUDE__
 
 #define UNMUTE 0
 #define MUTE 1
 
-#include "hUGEdriver.h"
+#define SFX_CH_RETRIGGER 0b11000000  // ???
 
 extern const unsigned char SFX_0[];
 extern const unsigned char SFX_1[];
@@ -20,5 +20,10 @@ extern unsigned char Sound_ChannelResumeDelay[4];
 void sfx_play(unsigned char *sfx_id);
 void sfx_update(void);
 // void hUGE_init_nonbanked();
+
+void mute_channels();
+void music_play();
+void music_resume();
+void music_pause();
 
 #endif

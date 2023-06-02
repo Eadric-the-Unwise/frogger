@@ -13,6 +13,7 @@
 #include "../res/tiles/log_frog.h"
 #include "../res/tiles/reset_timer.h"
 #include "../res/tiles/win_frog.h"
+#include "../sound/sound.h"
 
 #define CHANGED_BUTTONS (last_joy ^ joy)
 #define CLICKED(x) ((joy & x) && (joy & x) != (last_joy & x))

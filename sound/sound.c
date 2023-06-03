@@ -1,4 +1,5 @@
 #include "sound.h"
+#include "hUGEDriver.h"
 
 #include <gb/gb.h>
 
@@ -16,6 +17,20 @@ const unsigned char SFX_6[] = {0, 1, 0x00, 0x80, 0xB1, 0x82, 0x80};  // bump int
 const unsigned char SFX_7[] = {3, 1, 0x00, 0xC2, 0x80, 0x80};        // door breaking open
 
 unsigned char Sound_ChannelResumeDelay[4] = {0, 0, 0, 0};
+
+void hUGE_init_nonbanked(UINT8 music_bank, const hUGESong_t *song)
+    NONBANKED
+{
+    // const hUGESong_t *current_song = song;
+    __critical
+    {
+        // current_music_bank = music_bank;
+        UINT8 __save = music_bank;
+        SWITCH_ROM(music_bank);
+        hUGE_init(song);
+        SWITCH_ROM(__save);
+    }
+}
 
 void sfx_update(void)
 {

@@ -16,6 +16,8 @@
 // CGB PALLETES
 // SOUND
 // STAGE 2
+extern const hUGESong_t sample_song;
+
 GameCharacter_t PLAYER;                                  // FROG
 GameCharacter_t LOG_FROG;                                // TOPHAT FROG
 GameCharacter_t FLY;                                     // 200 pt FLY
@@ -1105,6 +1107,12 @@ void main()
     TIMERSTATE = tick;
 
     init_level();
+
+    __critical
+    {
+        hUGE_init_nonbanked(1, &sample_song);
+        add_VBL(hUGE_dosound);
+    }
 
     while (1)
     {

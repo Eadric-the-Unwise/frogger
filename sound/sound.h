@@ -21,7 +21,7 @@ extern unsigned char Sound_ChannelResumeDelay[4];
 
 void sfx_play(unsigned char *sfx_id);
 void sfx_update(void);
-// void hUGE_init_nonbanked();
+void hUGE_init_nonbanked(UINT8 music_bank, const hUGESong_t *song);
 
 void mute_channels();
 void music_play();

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <rand.h>
-
+#include "../sound/hUGEDriver.h"
+#include "../sound/sound.h"
 #include "scene.h"
 //------------GOALS-------------//
 // ADD MORE RNG TO FLY WHEN IDLING ABOVE SIDEWALK
@@ -995,6 +996,7 @@ void render_game()
                     is_animating = TRUE;
                     move_x = -12;
                     PLAYER.direction = LEFT;
+                    sfx_play(SFX_3);
                 }
                 break;
             case J_RIGHT:
@@ -1004,6 +1006,7 @@ void render_game()
                     is_animating = TRUE;
                     move_x = 12;
                     PLAYER.direction = RIGHT;
+                    sfx_play(SFX_3);
                 }
                 break;
             case J_UP:
@@ -1014,6 +1017,7 @@ void render_game()
                     move_y = -8;
                     PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
                     PLAYER.direction = UP;
+                    sfx_play(SFX_3);
                 }
                 break;
             case J_DOWN:
@@ -1024,6 +1028,7 @@ void render_game()
                     move_y = 8;
                     PLAYER.position = ON_NOTHING; // UNTIL FROG LANDS
                     PLAYER.direction = DOWN;
+                    sfx_play(SFX_3);
                 }
                 break;
             }
@@ -1077,6 +1082,10 @@ void main()
 {
     STAT_REG = 0x45; // enable LYC=LY interrupt so that we can set a specific line it will fire at //
     LYC_REG = 0x00;
+
+    NR52_REG = 0x80;
+    NR51_REG = 0xFF;
+    NR50_REG = 0x77;
 
     CRITICAL
     {

@@ -1,3 +1,4 @@
+#pragma bank 1
 /*
 
  WIN_FROG.C
@@ -5,7 +6,7 @@
  Map Source File.
 
  Info:
-   Section       : 
+   Section       :
    Bank          : 0
    Map size      : 2 x 2
    Tile set      : C:\c_code\projects\minigames\frogger\res\tiles\bkg_tiles.gbr
@@ -23,8 +24,7 @@
 #define WIN_FROGBank 0
 
 const unsigned char WIN_FROG[] =
-{
-  0x20,0x21,0x22,0x23
-};
+    {
+        0x20, 0x21, 0x22, 0x23};
 
 /* End of WIN_FROG.C */

@@ -1108,11 +1108,11 @@ void main()
 
     init_level();
 
-    __critical
-    {
-        hUGE_init_nonbanked(1, &sample_song);
-        add_VBL(hUGE_dosound);
-    }
+    // CRITICAL
+    // {
+    //     hUGE_init_nonbanked(1, &sample_song);
+    //     add_VBL(hUGE_dosound);
+    // }
 
     while (1)
     {

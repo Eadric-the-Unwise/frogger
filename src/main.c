@@ -525,9 +525,9 @@ void scroll_counters()
 
     if (scx_counter % 3 == 0)
     {
-        SCROLL_CAR1 += 1; // CAR 1 BUS
+        LYs[LY_CAR_1_BUS].scroll -= 1; // CAR 1 BUS
     }
-    SCROLL_CAR2 -= 1; // CAR 2 PINK
+    LYs[LY_CAR_2_PINK].scroll += 1; // CAR 2 PINK
 
     scx_counter++;
 }

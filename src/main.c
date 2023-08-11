@@ -326,64 +326,114 @@ void update_move_xy()
         }
     }
 }
-void parallaxScroll()
-{ // CAMERA Y POSITION IN TILE ROWS
-    switch (LYC_REG)
-    {
-    case 0x00: // first three stationary rows
-        move_bkg(0, 0);
-        LYC_REG = 0x17;
-        break;
-    case 0x17: // LOG 1 // TOP
-        move_bkg(SCROLL_LOG1, 0);
-        LYC_REG = 0x1F;
-        break;
-    case 0x1F: // TURLES 1
-        move_bkg(SCROLL_TURTLE1, 0);
-        LYC_REG = 0x27;
-        break;
-    case 0x27: // LOG 2 (fast)
-        move_bkg(SCROLL_LOG2, 0);
-        LYC_REG = 0x2F;
-        break;
-    case 0x2F: // LOG 3 // BOTTOM
-        move_bkg(SCROLL_LOG3, 0);
-        LYC_REG = 0x37;
-        break;
-    case 0x37: // TURTLES 2
-        move_bkg(SCROLL_TURTLE2, 0);
-        LYC_REG = 0x40;
-        break;
-    case 0x40: // MIDDLE WALL
-        move_bkg(0, 0);
-        LYC_REG = 0x48;
-        break;
-    case 0x48: // CAR 1 BUS
-        move_bkg(SCROLL_CAR1, 0);
-        LYC_REG = 0x50;
-        break;
-    case 0x50: // CAR 2 PINK
-        move_bkg(SCROLL_CAR2, 0);
-        LYC_REG = 0x58;
-        break;
-    case 0x58: // CAR 3
-        move_bkg(SCROLL_CAR3, 0);
-        LYC_REG = 0x60;
-        break;
-    case 0x60: // CAR 4
-        move_bkg(SCROLL_CAR4, 0);
-        LYC_REG = 0x68;
-        break;
-    case 0x68: // CAR 5
-        move_bkg(SCROLL_CAR5, 0);
-        LYC_REG = 0x6F;
-        break;
-    case 0x6F: // BOTTOM CURB AND BELOW, STATIONARY
-        move_bkg(0, 0);
-        LYC_REG = 0x00;
-        break;
-    }
+// void parallaxScroll()
+// { // CAMERA Y POSITION IN TILE ROWS
+//     switch (LYC_REG)
+//     {
+//     case 0x00: // first three stationary rows
+//         move_bkg(0, 0);
+//         LYC_REG = 0x17;
+//         break;
+//     case 0x17: // LOG 1 // TOP
+//         move_bkg(SCROLL_LOG1, 0);
+//         LYC_REG = 0x1F;
+//         break;
+//     case 0x1F: // TURLES 1
+//         move_bkg(SCROLL_TURTLE1, 0);
+//         LYC_REG = 0x27;
+//         break;
+//     case 0x27: // LOG 2 (fast)
+//         move_bkg(SCROLL_LOG2, 0);
+//         LYC_REG = 0x2F;
+//         break;
+//     case 0x2F: // LOG 3 // BOTTOM
+//         move_bkg(SCROLL_LOG3, 0);
+//         LYC_REG = 0x37;
+//         break;
+//     case 0x37: // TURTLES 2
+//         move_bkg(SCROLL_TURTLE2, 0);
+//         LYC_REG = 0x40;
+//         break;
+//     case 0x40: // MIDDLE WALL
+//         move_bkg(0, 0);
+//         LYC_REG = 0x48;
+//         break;
+//     case 0x48: // CAR 1 BUS
+//         move_bkg(SCROLL_CAR1, 0);
+//         LYC_REG = 0x50;
+//         break;
+//     case 0x50: // CAR 2 PINK
+//         move_bkg(SCROLL_CAR2, 0);
+//         LYC_REG = 0x58;
+//         break;
+//     case 0x58: // CAR 3
+//         move_bkg(SCROLL_CAR3, 0);
+//         LYC_REG = 0x68;
+//         break;
+//     case 0x60: // CAR 4
+//         move_bkg(SCROLL_CAR4, 0);
+//         LYC_REG = 0x68;
+//         break;
+//     case 0x68: // CAR 5
+//         move_bkg(SCROLL_CAR5, 0);
+//         LYC_REG = 0x6F;
+//         break;
+//     case 0x6F: // BOTTOM CURB AND BELOW, STATIONARY
+//         move_bkg(0, 0);
+//         LYC_REG = 0x00;
+//         break;
+//     }
+// }
+typedef enum
+{
+    LY_LOG_1 = 0,
+    LY_TURTLES_1,
+    LY_LOG_2,
+    LY_LOG_3,
+    LY_TURTLES_2,
+    LY_MIDDLE_WALL,
+    LY_CAR_1_BUS,
+    LY_CAR_2_PINK,
+    LY_CAR_3,
+    LY_CAR_4,
+    LY_CAR_5,
+    LY_BOTTOM_CURB,
+    LY_COUNT
+} LY_names_e;
+
+typedef struct LY_item_t
+{
+    uint8_t scroll;
+    uint8_t next_LYC;
+} LY_item_t;
+
+LY_item_t LYs[LY_COUNT] = {
+    {0, 0x17}, // LOG 1 // TOP
+    {0, 0x1F}, // TURLES 1
+    {0, 0x27}, // LOG 2 (fast)
+    {0, 0x2F}, // LOG 3 // BOTTOM
+    {0, 0x37}, // TURTLES 2
+    {0, 0x40}, // MIDDLE WALL
+    {0, 0x48}, // CAR 1 BUS
+    {0, 0x50}, // CAR 2 PINK
+    {0, 0x58}, // CAR 3
+    {0, 0x60}, // CAR 4
+    {0, 0x68}, // CAR 5
+    {0, 0x6F}  // BOTTOM CURB AND BELOW, STATIONARY
+};
+
+uint8_t *current = (uint8_t *)LYs;
+
+void parallaxScroll(void)
+{
+    uint8_t *c = current;
+    SCX_REG = *c++;
+    LYC_REG = *c++;
+    current = (c == ((uint8_t *)LYs + sizeof(LYs))) ? (uint8_t *)LYs : c;
 }
+
+const uint8_t black[16] = {0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00};
+
 void update_palette()
 { // CORRECTLY UPDATES THE SPRITE COLOR PALETTES IF FLASHING IS ACTIVE. (move_metasprite OVERWRITES PROPERTY FLAGS, SO THIS CORRECTS THOSE UPDATES)
 
@@ -422,10 +472,10 @@ void scroll_counters()
 {
     if (scx_counter % 6 == 0)
     {
-        SCROLL_LOG1 -= 1;    // LOG 1 (TOP LOG)
-        SCROLL_TURTLE1 += 1; // TURTLES 1
-        SCROLL_TURTLE2 += 1; // TURTLES 2
-        if (!is_dying)       // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
+        LYs[LY_LOG_1].scroll += 1;     // LOG 1 (TOP LOG)
+        LYs[LY_TURTLES_1].scroll -= 1; // TURTLES 1
+        LYs[LY_TURTLES_2].scroll -= 1; // TURTLES 2
+        if (!is_dying)                 // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
             if (PLAYER.position == ON_TURTLE)
             {
@@ -441,7 +491,7 @@ void scroll_counters()
     }
     if (scx_counter % 5 == 0)
     {
-        SCROLL_LOG3 -= 1; // LOG 3 (BOTTOM LOG)
+        LYs[LY_LOG_3].scroll += 1; // LOG 3 (BOTTOM LOG)
         if (LOG_FROG.spawn)
         {
             LOG_FROG.x += 1; //
@@ -458,12 +508,12 @@ void scroll_counters()
         }
     }
     if (scx_counter % 4 == 0)
-    {                     // += moves the 'camera' to the right, resulting in objects on screen moving left
-        SCROLL_LOG2 -= 1; // LOG 2 (CENTER LOG)
-        SCROLL_CAR3 += 1; // CAR3
-        SCROLL_CAR4 -= 1; // CAR4
-        SCROLL_CAR5 += 1; // CAR5
-        if (!is_dying)    // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
+    {                              // += moves the 'camera' to the right, resulting in objects on screen moving left
+        LYs[LY_LOG_2].scroll += 1; // LOG 2 (CENTER LOG)
+        LYs[LY_CAR_3].scroll -= 1; // CAR3
+        LYs[LY_CAR_4].scroll += 1; // CAR4
+        LYs[LY_CAR_5].scroll -= 1; // CAR5
+        if (!is_dying)             // UPDATE FROG POSITION TO FOLLOW TURTLE SPEED, UNLESS DYING ANIMATION IS OCCURRING
         {
             if (PLAYER.position == ON_LOG2)
             {
@@ -1089,11 +1139,20 @@ void main()
     NR51_REG = 0xFF;
     NR50_REG = 0x77;
 
+    set_bkg_data(1, 1, black);     // load black tile;
+    fill_bkg_rect(2, 0, 1, 18, 1); // draw a column of black tiles over the screen to visualize scroll
+
+    // set some arbitrary scroll offsets for some lines
+    // LYs[LY_TURTLES_2].scroll = 13;
+    // LYs[LY_CAR_4].scroll = 14;
+
+    SHOW_BKG;
     CRITICAL
     {
         add_LCD(parallaxScroll);
+        STAT_REG |= STATF_LYC;
     }
-    set_interrupts(VBL_IFLAG | LCD_IFLAG);
+    set_interrupts(IE_REG | LCD_IFLAG); //     set_interrupts(IE_REG | LCD_IFLAG);
 
     DISABLE_VBL_TRANSFER;
     OBP0_REG = 0b11100100;
@@ -1108,11 +1167,11 @@ void main()
 
     init_level();
 
-    // CRITICAL
-    // {
-    //     hUGE_init_nonbanked(1, &sample_song);
-    //     add_VBL(hUGE_dosound);
-    // }
+    CRITICAL
+    {
+        hUGE_init_nonbanked(1, &sample_song);
+        add_VBL(hUGE_dosound);
+    }
 
     while (1)
     {
